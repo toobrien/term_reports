@@ -1,69 +1,19 @@
-from    enum                    import  IntEnum
+from    util                    import  get_rows, r
 from    json                    import  loads
-from    math                    import  log, sqrt
+from    math                    import  log
 import  plotly.graph_objects    as      go
 from    plotly.subplots         import  make_subplots
 from    sys                     import  argv
-from    sqlite3                 import  connect
 from    time                    import  time
 from    typing                  import  List
 
 
 config  = loads(open("./config.json").read())
 
-DB_PATH     = config["db_path"]
 START       = config["start"]
 END         = config["end"]
-MAX_DATES   = 500
+MAX_DATES   = 1000
 MAX_MONTHS  = 12
-
-class r(IntEnum):
-
-    contract_id = 0
-    date        = 1
-    name        = 2
-    month       = 3
-    year        = 4
-    settle      = 5
-    spot        = 6
-    dte         = 7
-
-
-def load(
-    symbol: str, 
-    start:  str, 
-    end:    str
-) -> List:
-
-    db = connect(DB_PATH)
-
-    cur = db.cursor()
-
-    rows = cur.execute(
-        f'''
-            SELECT DISTINCT
-                ohlc.contract_id,
-                ohlc.date,
-                ohlc.name,
-                ohlc.month,
-                CAST(ohlc.year AS INT),
-                ohlc.settle,
-                spot.price,
-                CAST(julianday(metadata.to_date) - julianday(ohlc.date) AS INT)
-            FROM ohlc
-                INNER JOIN spot ON ohlc.name = spot.symbol AND ohlc.date = spot.date
-                INNER JOIN metadata ON ohlc.contract_id = metadata.contract_id
-            WHERE
-                ohlc.name = "{symbol}" AND
-                ohlc.date BETWEEN "{start}" AND "{end}"
-            ORDER BY ohlc.date ASC, ohlc.year ASC, ohlc.month ASC
-            ;
-        '''
-    ).fetchall()
-
-    db.close()
-
-    return rows
 
 
 def add_scatter(
@@ -111,8 +61,8 @@ def add_scatter(
         ]
 
         text = [ 
-            f"{trace_rows[i][r.month]}{trace_rows[i][r.contract_id][-2:]}\n"
-            f"{trace_rows[i + 1][r.month]}{trace_rows[i + 1][r.contract_id][-2:]}\n"
+            f"{trace_rows[i][r.month]}{trace_rows[i][r.id][-2:]}\n"
+            f"{trace_rows[i + 1][r.month]}{trace_rows[i + 1][r.id][-2:]}\n"
             f"{trace_rows[i][r.date]}" 
             for i in range(len(trace_rows) - 1)
         ]
@@ -211,15 +161,7 @@ if __name__ == "__main__":
 
     # get, sort, and and clean data
 
-    rows = load(symbol, start, end)
-    rows = [ 
-        row
-        for row in rows 
-        if  row[r.dte]      > 0 and 
-            row[r.settle]   > 0 and 
-            row[r.spot]     > 0
-    ]
-    rows = sorted(rows, reverse = True, key = lambda row: row[r.date])
+    rows = get_rows(symbol, start, end)
 
     # add plots and show
 
