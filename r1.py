@@ -1,4 +1,4 @@
-from    util                    import  get_rows, r
+from    util                    import  clean, get_rows, r
 from    json                    import  loads
 from    math                    import  log
 import  plotly.graph_objects    as      go
@@ -162,6 +162,7 @@ if __name__ == "__main__":
     # get, sort, and and clean data
 
     rows = get_rows(symbol, start, end)
+    rows = clean(rows)
 
     # add plots and show
 
