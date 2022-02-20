@@ -1,4 +1,3 @@
-from datetime import date
 from enum       import IntEnum
 from json       import loads
 from sqlite3    import connect
@@ -7,6 +6,7 @@ from typing     import List
 
 
 DB_PATH = loads(open("./config.json").read())["db_path"]
+DB      = connect(DB_PATH)
 
 
 class r(IntEnum):
@@ -21,15 +21,14 @@ class r(IntEnum):
     dte         = 7
 
 
-def get_rows(
+def get_groups(
     symbol: str, 
     start:  str, 
     end:    str
 ) -> List:
 
-    db = connect(DB_PATH)
-
-    cur = db.cursor()
+    cur     = DB.cursor()
+    groups  = []
 
     rows = cur.execute(
         f'''
@@ -43,35 +42,90 @@ def get_rows(
                 spot.price,
                 CAST(julianday(metadata.to_date) - julianday(ohlc.date) AS INT)
             FROM ohlc
-                INNER JOIN spot ON ohlc.name = spot.symbol AND ohlc.date = spot.date
-                INNER JOIN metadata ON ohlc.contract_id = metadata.contract_id
+                INNER JOIN 
+                    spot ON ohlc.name = spot.symbol AND ohlc.date = spot.date
+                INNER JOIN 
+                    metadata ON ohlc.contract_id = metadata.contract_id
             WHERE
                 ohlc.name = "{symbol}" AND
                 ohlc.date BETWEEN "{start}" AND "{end}"
-            ORDER BY ohlc.date ASC, ohlc.year ASC, ohlc.month ASC
+            ORDER BY 
+                ohlc.date ASC, ohlc.year ASC, ohlc.month ASC
             ;
         '''
     ).fetchall()
 
-    db.close()
+    if not rows:
 
-    return rows
+        # no spot prices for this symbol, use m1 as approximation 
+        
+        cur.row_factory = lambda cur, row: list(row)
+        
+        rows = cur.execute(
+            f'''
+                SELECT DISTINCT
+                    ohlc.contract_id,
+                    ohlc.date,
+                    ohlc.name,
+                    ohlc.month,
+                    CAST(ohlc.year AS INT),
+                    ohlc.settle,
+                    NULL,
+                    CAST(julianday(metadata.to_date) - julianday(ohlc.date) AS INT)
+                FROM ohlc
+                    INNER JOIN 
+                        metadata ON ohlc.contract_id = metadata.contract_id
+                WHERE
+                    ohlc.name = "{symbol}" AND
+                    ohlc.date BETWEEN "{start}" AND "{end}"
+                ORDER BY 
+                    ohlc.date ASC, ohlc.year ASC, ohlc.month ASC
+                ;
+            '''
+        ).fetchall()
+
+        groups = group_by_date(rows)
+
+        for group in groups:
+
+            for row in group:
+
+                row[r.spot] = group[0][r.settle]
+
+    else:
+
+        # spot prices available, group records by date
+
+        groups = group_by_date(rows)
+
+    return groups
 
 
-def clean(rows: List):
+# strip negatives and 0 dte for log
 
-    return [ 
-        row
-        for row in rows 
-        if  row[r.dte]      > 0 and 
-            row[r.settle]   > 0 and 
-            row[r.spot]     > 0
+def clean(groups: List):
+
+    groups = [ 
+        [ 
+            row 
+            for row in group
+            if  row[r.dte]      > 0 and
+                row[r.settle]   > 0 and
+                row[r.spot]     > 0
+        ]
+        for group in groups
     ]
 
+    groups = [
+        group 
+        for group in groups
+        if group
+    ]
 
-def group_by_date(rows: List, max_months):
+    return groups
 
-    start = time()
+
+def group_by_date(rows: List):
 
     groups      = []
     cur_date    = rows[0][r.date]
@@ -88,10 +142,8 @@ def group_by_date(rows: List, max_months):
             cur_set  = [ rows[i] ]
         
         else:
-
-            if len(cur_set) < max_months:
             
-                cur_set.append(rows[i])
+            cur_set.append(rows[i])
 
     groups.append(cur_set)
 
@@ -100,7 +152,7 @@ def group_by_date(rows: List, max_months):
 
 def spreads(groups: List, width: int):
 
-    spread_groups = [ [] for group in groups ]
+    spread_groups = [ [] for _ in groups ]
 
     for i in range(len(groups)):
 

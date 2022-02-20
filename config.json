@@ -1,5 +1,14 @@
 {
     "db_path":  "../data/futures.db",
     "start":    "1900-01-01",
-    "end":      "2050-01-01"
+    "end":      "2050-01-01",
+    "enabled": [
+        "VX",
+        "ZS", "ZM", "ZL", "ZC", "ZW", "KE", "ZO",
+        "KT", "CJ", "TT", "YO",
+        "HE", "LE",
+        "CL", "RB", "HO",
+        "GE",
+        "ES", "ZB", "ZT", "ZN"
+    ]
 }

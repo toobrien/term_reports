@@ -3,7 +3,7 @@ from    json    import loads
 from    sys     import argv
 from    time    import time
 from    typing  import List
-from    util    import get_rows, group_by_date, r, spreads
+from    util    import clean, get_groups, r, spreads
 
 config  = loads(open("./config.json").read())
 
@@ -11,12 +11,14 @@ DB_PATH     = config["db_path"]
 START       = config["start"]
 END         = config["end"]
 MAX_MONTHS  = 12
-MAX_DTE     = 180
 
 
-def report(rows: List):
+def report(groups: List):
 
-    groups          = group_by_date(rows, MAX_MONTHS)
+    groups          = [ 
+        group[:MAX_MONTHS]
+        for group in groups
+    ]
     spread_groups   = spreads(groups, 1)
     latest          = spread_groups[-1]
     flat            = [ 
@@ -45,29 +47,48 @@ def report(rows: List):
 
     # day report
     
-    avg_discount = 0
+    discounts = []
 
-    for row in groups[-1]:
+    for group in groups:
 
-        avg_discount += row[r.settle] / row[r.spot] - 1
+        avg_discount = 0
 
-    avg_discount /= len(groups[-1])
+        for row in group:
+
+            avg_discount += row[r.settle] / row[r.spot] - 1
+
+        avg_discount /= len(group)
+        discounts.append(avg_discount)
+
+    latest_discount = discounts[-1]
+    discounts       = sorted(discounts)
+    discount_rank   = bisect_left(discounts, latest_discount) / len(discounts)
 
     print(
-        f"{latest[0][r.date]} {latest[0][r.name]}".ljust(15),
-        str(latest[0][r.spot]).ljust(15),
-        f"{avg_discount: 0.3f}".ljust(15),
+        "date".ljust(12),
+        "symbol".ljust(12),
+        "spot".ljust(12),
+        "avg. discount".ljust(12),
+        "discount rank".ljust(12)
+    )
+
+    print(
+        f"{latest[0][r.date]}".ljust(12),
+        f"{latest[0][r.name]}".ljust(12),
+        f"{latest[0][r.spot]: 0.3f}".ljust(12),
+        f"{latest_discount: 0.3f}".ljust(12),
+        f"{discount_rank: 0.3f}".ljust(12),
         "\n"
     )
 
     # spread report
 
     print(
-        "id".ljust(15), 
-        "size pct.".ljust(15),
-        "size pt.".ljust(15),
-        "rank (all)".ljust(15), 
-        "rank (season)".ljust(15)
+        "id".ljust(12), 
+        "size pct.".ljust(12),
+        "size pt.".ljust(12),
+        "rank (all)".ljust(12), 
+        "rank (season)".ljust(12)
     )
 
     for spread in latest:
@@ -83,11 +104,11 @@ def report(rows: List):
         rank_season = bisect_left(size_season, size_pct) / len(size_season)
 
         print(
-            f"{id: <15}",
-            f"{size_pct: <15.3f}",
-            f"{size_pt: <15.3f}"
-            f"{rank_all: <15.3f}",
-            f"{rank_season: <15.3f}",
+            f"{id: <12}",
+            f"{size_pct: <12.3f}",
+            f"{size_pt: <12.3f}"
+            f"{rank_all: <12.3f}",
+            f"{rank_season: <12.3f}",
         )
 
 
@@ -95,18 +116,22 @@ if __name__ == "__main__":
 
     start_ts = time()
 
-    # input
+    symbols = None
 
-    symbol  = argv[1]
-    start   = START if len(argv) < 3 else argv[2]
-    end     = END   if len(argv) < 4 else argv[3]
+    if argv[1] != "all":
+    
+        symbols = " ".join(argv[1:]).split()
+    
+    else:
 
-    rows = get_rows(symbol, start, end)
+        symbols = config["enabled"]
 
-    # add plots and show
+    for symbol in symbols:
+        
+        groups = clean(get_groups(symbol, START, END))
 
-    report(rows)
+        report(groups)
 
-    # finished
+        print("\n")
 
-    print(f"\nfinished:\t{time() - start_ts: 0.1f}")
+    print(f"finished:\t{time() - start_ts: 0.1f}")
