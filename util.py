@@ -1,7 +1,6 @@
 from enum       import IntEnum
 from json       import loads
 from sqlite3    import connect
-from time       import time
 from typing     import List
 
 
@@ -20,6 +19,7 @@ class r(IntEnum):
     spot        = 6
     dte         = 7
 
+
 class rs(IntEnum):
 
     id          = 0
@@ -31,6 +31,7 @@ class rs(IntEnum):
     spot        = 6
     dte         = 7
     dte_back    = 8
+
 
 def get_groups(
     symbol: str, 
