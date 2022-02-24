@@ -196,5 +196,3 @@ if __name__ == "__main__":
         report(groups)
 
         print("\n")
-
-    print(f"finished:\t{time() - start_ts: 0.1f}")
