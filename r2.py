@@ -1,6 +1,4 @@
 from    bisect      import bisect_left
-from ctypes import pointer
-from curses import COLOR_WHITE
 from    enum        import IntEnum
 from    json        import loads
 from    math        import log
@@ -16,6 +14,7 @@ config  = loads(open("./config.json").read())
 DB_PATH     = config["db_path"]
 START       = config["start"]
 END         = config["end"]
+USE_SPOT    = False
 MAX_MONTHS  = 48
 
 class sr(IntEnum):
@@ -191,7 +190,7 @@ if __name__ == "__main__":
 
     for symbol in symbols:
         
-        groups = clean(get_groups(symbol, START, END))
+        groups = clean(get_groups(symbol, START, END, USE_SPOT))
 
         report(groups)
 
