@@ -1,7 +1,10 @@
-from enum                   import  IntEnum
-from json                   import  loads
-from sqlite3                import  connect
-from typing                 import  List
+from curses import COLOR_WHITE
+from datetime   import datetime
+from enum       import IntEnum
+from json       import detect_encoding, loads
+from sqlite3    import connect
+from statistics import correlation, StatisticsError
+from typing     import List
 
 
 DB_PATH = loads(open("./config.json").read())["db_path"]
@@ -243,3 +246,103 @@ def by_year(spread_records: List):
         year_groups[record[rs.year]].append(record)
 
     return year_groups
+
+
+class cor_r(IntEnum):
+
+    date        = 0
+    dte         = 1
+    correlation = 2
+
+
+def spot_correlation(rows: List, length: int):
+
+    diff_spot   = [ None ]
+    diff_settle = [ None ]
+
+    for i in range(1, len(rows)):
+
+        x = rows[i][rs.spot] - rows[i - 1][rs.spot]
+        y = rows[i][rs.settle] - rows[i - 1][rs.settle]
+
+        diff_spot.append(x)
+        diff_settle.append(y)
+
+    res = [ 
+        [ row[rs.date], row[rs.dte], None ]
+        for row in rows 
+    ]
+
+    for i in range(length + 1, len(rows)):
+
+        try:
+
+            res[i][cor_r.correlation] = correlation(
+                diff_spot[i - length:i],
+                diff_settle[i - length:i]
+            )
+
+        except StatisticsError:
+
+            res[i][cor_r.correlation] = None
+
+    return res
+
+
+class avg_r(IntEnum):
+
+    date        = 0
+    year        = 1
+    day_of_year = 2
+    avg_settle  = 3
+
+
+def term_avg_by_year(
+    spread_groups:  List,
+    start:          int,
+    end:            int
+):
+
+    avgs = []
+
+    # calculate average spread for each day
+
+    for i in range(len(spread_groups)):
+
+        group = spread_groups[i][start:end]
+
+        if group:
+
+            year = group[0][rs.date][0:4]
+            avg  = 0
+
+            for row in group:
+
+                avg += row[rs.settle]
+
+            avg /= len(group)
+
+            avgs.append(
+                [ 
+                    group[0][rs.date],
+                    group[0][rs.date][0:4],
+                    datetime.strptime(group[0][rs.date], "%Y-%m-%d").timetuple().tm_yday,
+                    avg
+                ]
+            )
+
+    # group averages by year
+
+    by_year = {}
+
+    for row in avgs:
+
+        year = row[1]
+
+        if year not in by_year:
+
+            by_year[year] = []
+
+        by_year[year].append(row)
+
+    return by_year
