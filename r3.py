@@ -1,45 +1,80 @@
 from    json                    import  loads
 import  plotly.graph_objects    as      go
 from    plotly.subplots         import  make_subplots
+from    statistics              import  correlation, StatisticsError
 from    typing                  import  List
 from    util                    import  by_season, by_year, clean, get_groups, rs, spreads
 
 
-config  = loads(open("./config.json").read())
-
+config      = loads(open("./config.json").read())
 DB_PATH     = config["db_path"]
 START       = config["start"]
 END         = config["end"]
 USE_SPOT    = False
+MA_LEN      = 20
 
 
-def add_spread(
+def add_trace(
     fig:    go.Figure,
-    spread: List,
+    rows:   List,
+    id:     str,
     ax_x:   int,
     ax_y:   int,
     row:    int,
     col:    int
 ):
 
-    id      = spread[0][rs.id]
-    x       = [ r[ax_x] for r in spread ]
-    y       = [ r[ax_y] for r in spread ]
-    text    = [ r[rs.date] for r in spread ]
+    x       = [ r[ax_x] for r in rows ]
+    y       = [ r[ax_y] for r in rows ]
+    text    = [ r[rs.date] for r in rows ]
 
     fig.add_trace(
-        go.Scatter(
+        go.Scattergl(
             {
                 "x": x,
                 "y": y,
                 "text": text,
-                "name": f"{id[0]}/{id[1]}",
+                "name": id,
                 "mode": "markers"
             }
         ),
         row = row,
         col = col
     )
+
+
+def spot_correlation(rows: List, length: int):
+
+    diff_spot   = [ None ]
+    diff_settle = [ None ]
+
+    for i in range(1, len(rows)):
+
+        x = rows[i][rs.spot] - rows[i - 1][rs.spot]
+        y = rows[i][rs.settle] - rows[i - 1][rs.settle]
+
+        diff_spot.append(x)
+        diff_settle.append(y)
+
+    res = [ 
+        [ row[rs.dte], None ]
+        for row in rows 
+    ]
+
+    for i in range(length + 1, len(rows)):
+
+        try:
+
+            res[i][1] = correlation(
+                diff_spot[i - length:i],
+                diff_settle[i - length:i]
+            )
+
+        except StatisticsError:
+
+            res[i][1] = None
+
+    return res
 
 
 def report():
@@ -52,17 +87,25 @@ def report():
     nq = by_year(nq)
 
     fig = make_subplots(
-        rows        = 2, 
+        rows        = 3, 
         cols        = 1,
-        row_heights = [ 0.5, 0.5 ] 
+        row_heights = [ 0.34, 0.33, 0.33 ]
     )
 
-    for year, rows in nq.items():
+    for _, rows in nq.items():
     
         # by dte 
         
-        add_spread(fig, rows, rs.dte, rs.settle, 1, 1)
-        add_spread(fig, rows, rs.dte, rs.spot, 2, 1)
+        spread_id       = rows[0][rs.id]
+        spread_id       = f"{spread_id[0]}/{spread_id[1]}"
+        spot_id         = spread_id + " S"
+        correlation_id  = spread_id + " C"
+
+        crs = spot_correlation(rows, MA_LEN)
+
+        add_trace(fig, rows, spread_id, rs.dte, rs.settle, 1, 1)
+        add_trace(fig, rows, spot_id, rs.dte, rs.spot, 2, 1)
+        add_trace(fig, crs, correlation_id, 0, 1, 3, 1)
 
         # by date
 
