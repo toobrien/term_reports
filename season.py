@@ -1,9 +1,8 @@
 from    json                    import  loads
 from    plotly.subplots         import  make_subplots
 from    util                    import  add_trace, avg_r, by_season, by_year, clean,        \
-                                        cor_r, get_groups, rs, spot_correlation, spreads,   \
-                                        term_avg_by_year
-
+                                        cor_r, get_groups, rs, spot_correlation, spreads
+from    sys                     import argv
 
 config      = loads(open("./config.json").read())
 DB_PATH     = config["db_path"]
@@ -12,10 +11,14 @@ END         = config["end"]
 USE_SPOT    = False
 MA_LEN      = 20
 
-SYMBOL = "HO"
-MONTHS = ("N", "Q")
+
+# argv[1] like "HONQ" or "CLMN"
+# argv[2] == "abs" or "pct"
+
+SYMBOL = argv[1][:-2]
+MODE   = argv[2]
+MONTHS = (argv[1][-2:-1], argv[1][-1:])
 WIDTH  = 1
-MODE   = "pct"      # "abs" or "pct"
 
 def report():
 
