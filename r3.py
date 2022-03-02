@@ -1,9 +1,8 @@
 from    json                    import  loads
-import  plotly.graph_objects    as      go
 from    plotly.subplots         import  make_subplots
-from    typing                  import  List
-from    util                    import  avg_r, by_season, by_year, clean, cor_r, get_groups, \
-                                        rs, spot_correlation, spreads, term_avg_by_year
+from    util                    import  add_trace, avg_r, by_season, by_year, clean,        \
+                                        cor_r, get_groups, rs, spot_correlation, spreads,   \
+                                        term_avg_by_year
 
 
 config      = loads(open("./config.json").read())
@@ -13,60 +12,33 @@ END         = config["end"]
 USE_SPOT    = False
 MA_LEN      = 20
 
-
-def add_trace(
-    fig:        go.Figure,
-    rows:       List,
-    id:         str,
-    ax_x:       int,
-    ax_y:       int,
-    ax_text:    int,
-    fig_row:    int,
-    fig_col:    int
-):
-
-    x       = [ r[ax_x] for r in rows ]
-    y       = [ r[ax_y] for r in rows ]
-    text    = [ r[ax_text] for r in rows ]
-
-    fig.add_trace(
-        go.Scattergl(
-            {
-                "x": x,
-                "y": y,
-                "text": text,
-                "name": id,
-                "mode": "markers"
-            }
-        ),
-        row = fig_row,
-        col = fig_col
-    )
-
+SYMBOL = "HO"
+MONTHS = ("N", "Q")
+WIDTH  = 1
+MODE   = "pct"      # "abs" or "pct"
 
 def report():
 
-    groups          = clean(get_groups("HO", START, END, USE_SPOT))
-    spread_groups   = spreads(groups, 1)
-    avgs            = term_avg_by_year(spread_groups, 0, 9)
-    season_groups   = by_season(spread_groups)
+    settle_ax           = rs.settle if MODE == "abs" else rs.settle_pct
+    groups              = clean(get_groups(SYMBOL, START, END, USE_SPOT))
+    spread_groups       = spreads(groups, WIDTH)
+    season_groups       = by_season(spread_groups)
 
-    nq = season_groups[("N", "Q")]
+    nq = season_groups[MONTHS]
     nq = by_year(nq)
 
     fig = make_subplots(
-        rows        = 4, 
+        rows        = 3, 
         cols        = 1,
         subplot_titles = [
-            "settle",
+            f"settle {MODE}",
             "spot",
-            "correlation",
-            "avg settle"
+            "correlation"
         ],
         vertical_spacing = 0.05
     )
 
-    fig.update_layout(height = 1600)
+    fig.update_layout(height = 1500)
 
     # spreads (settlement values)
     # underlying
@@ -76,17 +48,18 @@ def report():
         
         spread_id       = rows[0][rs.id]
         spread_id       = f"{spread_id[0]}/{spread_id[1]}"
-        spot_id         = spread_id + " S"
-        correlation_id  = spread_id + " C"
+        spread_id_mode  = f"{spread_id} {MODE}"
+        spot_id         = spread_id + " spot"
+        correlation_id  = spread_id + " cor."
 
         crs = spot_correlation(rows, MA_LEN)
 
         add_trace(
             fig     = fig, 
             rows    = rows, 
-            id      = spread_id, 
+            id      = spread_id_mode,
             ax_x    = rs.dte, 
-            ax_y    = rs.settle, 
+            ax_y    = settle_ax, 
             ax_text = rs.date, 
             fig_row = 1, 
             fig_col = 1
@@ -111,21 +84,6 @@ def report():
             ax_y    = cor_r.correlation, 
             ax_text = cor_r.date,
             fig_row = 3, 
-            fig_col = 1
-        )
-
-    # avg spread by year
-
-    for year, rows in avgs.items():
-
-        add_trace(
-            fig     = fig, 
-            rows    = rows, 
-            id      = str(year), 
-            ax_x    = avg_r.day_of_year, 
-            ax_y    = avg_r.avg_settle, 
-            ax_text = avg_r.date, 
-            fig_row = 4, 
             fig_col = 1
         )
 

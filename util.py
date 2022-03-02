@@ -1,10 +1,10 @@
-from curses import COLOR_WHITE
-from datetime   import datetime
-from enum       import IntEnum
-from json       import detect_encoding, loads
-from sqlite3    import connect
-from statistics import correlation, StatisticsError
-from typing     import List
+from            datetime                import datetime
+from            enum                    import IntEnum
+from            json                    import loads
+import          plotly.graph_objects    as     go
+from            sqlite3                 import connect
+from            statistics              import correlation, StatisticsError
+from            typing                  import List
 
 
 DB_PATH = loads(open("./config.json").read())["db_path"]
@@ -31,10 +31,11 @@ class rs(IntEnum):
     month       = 3
     year        = 4
     settle      = 5
-    spot        = 6
-    dte         = 7
-    dte_back    = 8
-    seq         = 9
+    settle_pct  = 6
+    spot        = 7
+    dte         = 8
+    dte_back    = 9
+    seq         = 10
 
 
 def get_groups(
@@ -188,15 +189,16 @@ def spreads(groups: List, width: int):
                 f"{group[j][rs.month]}{group[j][rs.id][-2:]}",
                 f"{group[j + width][rs.month]}{group[j + width][rs.id][-2:]}",
             )
-            spread_record[rs.date]      = group[j][r.date]
-            spread_record[rs.dte]       = group[j][r.dte]
-            spread_record[rs.dte_back]  = group[j + width][r.dte]
-            spread_record[rs.name]      = group[j][r.name]
-            spread_record[rs.month]     = (group[j][r.month], group[j + width][r.month])
-            spread_record[rs.year]      = (group[j][r.year], group[j + 1][r.year])
-            spread_record[rs.settle]    = group[j + width][r.settle] - group[j][r.settle]
-            spread_record[rs.spot]      = group[j][r.spot]
-            spread_record[rs.seq]       = j
+            spread_record[rs.date]          = group[j][r.date]
+            spread_record[rs.dte]           = group[j][r.dte]
+            spread_record[rs.dte_back]      = group[j + width][r.dte]
+            spread_record[rs.name]          = group[j][r.name]
+            spread_record[rs.month]         = (group[j][r.month], group[j + width][r.month])
+            spread_record[rs.year]          = (group[j][r.year], group[j + 1][r.year])
+            spread_record[rs.settle]        = group[j + width][r.settle] - group[j][r.settle]
+            spread_record[rs.spot]          = group[j][r.spot]
+            spread_record[rs.settle_pct]    = spread_record[rs.settle] / spread_record[rs.spot]
+            spread_record[rs.seq]           = j
 
             spread_group.append(spread_record)
 
@@ -300,7 +302,8 @@ class avg_r(IntEnum):
 def term_avg_by_year(
     spread_groups:  List,
     start:          int,
-    end:            int
+    end:            int,
+    mode:           str
 ):
 
     avgs = []
@@ -318,7 +321,13 @@ def term_avg_by_year(
 
             for row in group:
 
-                avg += row[rs.settle]
+                if mode == "abs":
+                
+                    avg += row[rs.settle]
+                
+                elif mode == "pct":
+
+                    avg += row[rs.settle] / row[rs.spot]
 
             avg /= len(group)
 
@@ -346,3 +355,33 @@ def term_avg_by_year(
         by_year[year].append(row)
 
     return by_year
+
+
+def add_trace(
+    fig:        go.Figure,
+    rows:       List,
+    id:         str,
+    ax_x:       int,
+    ax_y:       int,
+    ax_text:    int,
+    fig_row:    int,
+    fig_col:    int
+):
+
+    x       = [ r[ax_x] for r in rows ]
+    y       = [ r[ax_y] for r in rows ]
+    text    = [ r[ax_text] for r in rows ]
+
+    fig.add_trace(
+        go.Scattergl(
+            {
+                "x": x,
+                "y": y,
+                "text": text,
+                "name": id,
+                "mode": "markers"
+            }
+        ),
+        row = fig_row,
+        col = fig_col
+    )
