@@ -27,8 +27,8 @@ def report():
     spread_groups       = spreads(groups, WIDTH)
     season_groups       = by_season(spread_groups)
 
-    nq = season_groups[MONTHS]
-    nq = by_year(nq)
+    selected = season_groups[MONTHS]
+    selected = by_year(selected)
 
     fig = make_subplots(
         rows        = 3, 
@@ -47,7 +47,7 @@ def report():
     # underlying
     # correlation
 
-    for _, rows in nq.items(): 
+    for _, rows in selected.items(): 
         
         spread_id       = rows[0][rs.id]
         spread_id       = f"{spread_id[0]}/{spread_id[1]}"
