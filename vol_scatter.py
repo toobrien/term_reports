@@ -29,7 +29,8 @@ def report(spread_ids: List):
             for spread in spread_ids
         ],
         x_title = "size (%)",
-        y_title = "change (%)"
+        y_title = "change (%)",
+        vertical_spacing = 0.05
     )
 
     symbol_data = {}
