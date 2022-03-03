@@ -10,11 +10,11 @@ DB_PATH     = config["db_path"]
 START       = config["start"]
 END         = config["end"]
 USE_SPOT    = False
-
 START_MONTH = 0
-END_MONTH   = 6
+END_MONTH   = 12
 
-def report(symbol: str):
+
+def report(symbol: str, mode: str):
 
     groups              = clean(get_groups(symbol, START, END, USE_SPOT))
     spread_groups       = spreads(groups, 1)
@@ -22,43 +22,39 @@ def report(symbol: str):
     avgs_pct            = term_avg_by_year(spread_groups, 0, 12, mode = "pct")
 
     fig = make_subplots(
-        rows        = 2, 
-        cols        = 1,
-        subplot_titles = [
-            "avg settle (abs)",
-            "avg settle (pct)"
-        ]
+        rows            = 1,
+        cols            = 1,
+        x_title = f"day of year",
+        y_title = f"avg. spread",
+        vertical_spacing = 0.05
     )
+    
+    fig.update_layout(title = f"settle {mode}")
 
     # avg spread by year
 
-    abs = [ (year, rows) for year, rows in avgs_abs.items() ]
-    pct = [ (year, rows) for year, rows in avgs_pct.items() ]
+    yr = []
 
-    for i in range(len(abs)):
+    if mode == "abs":
 
-        year_abs, rows_abs = abs[i]
-        year_pct, rows_pct = pct[i]
+        yr = [ (year, rows) for year, rows in avgs_abs.items() ]
+    
+    else:
+        
+        yr = [ (year, rows) for year, rows in avgs_pct.items() ]
+
+    for i in range(len(yr)):
+
+        year, rows = yr[i]
 
         add_trace(
             fig     = fig, 
-            rows    = rows_abs, 
-            id      = f"{str(year_abs)} abs", 
+            rows    = rows, 
+            id      = f"{str(year)}", 
             ax_x    = avg_r.day_of_year, 
             ax_y    = avg_r.avg_settle, 
-            ax_text = avg_r.date, 
-            fig_row = 1, 
-            fig_col = 1
-        )
-
-        add_trace(
-            fig     = fig,
-            rows    = rows_pct,
-            id      = f"{str(year_pct)} pct",
-            ax_x    = avg_r.day_of_year,
-            ax_y    = avg_r.avg_settle,
             ax_text = avg_r.date,
-            fig_row = 2,
+            fig_row = 1,
             fig_col = 1
         )
 
@@ -67,4 +63,4 @@ def report(symbol: str):
 
 if __name__ == "__main__":
 
-    report(argv[1])
+    report(argv[1], argv[2])
