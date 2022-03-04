@@ -43,6 +43,7 @@ def report(groups: List):
     size_all        = sorted([
         row[r.settle] / row[r.spot]
         for row in flat
+        if row[r.spot] != 0
     ])
 
     # group by season (m1, m2)
