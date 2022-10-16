@@ -1,6 +1,7 @@
 from            datetime                import datetime
 from            enum                    import IntEnum
 from            json                    import loads
+from            math                    import log
 import          plotly.graph_objects    as     go
 from            sqlite3                 import connect
 from            statistics              import correlation, StatisticsError
@@ -13,14 +14,15 @@ DB      = connect(DB_PATH)
 
 class r(IntEnum):
 
-    id          = 0
-    date        = 1
-    name        = 2
-    month       = 3
-    year        = 4
-    settle      = 5
-    spot        = 6
-    dte         = 7
+    id              = 0
+    date            = 1
+    name            = 2
+    month           = 3
+    year            = 4
+    settle          = 5
+    spot            = 6
+    dte             = 7
+    discount_rate   = 8
 
 
 class rs(IntEnum):
@@ -106,6 +108,22 @@ def get_groups(
             '''
         ).fetchall()
 
+        rows = [
+            (
+                row[r.id],
+                row[r.date],
+                row[r.name],
+                row[r.month],
+                row[r.year],
+                row[r.settle],
+                row[r.spot],
+                row[r.dte],
+                log(row[r.settle] / row[r.spot]) / (row[r.dte] / 365) \
+                if row[r.spot] > 0 and row[r.dte] > 0 else 0
+            )
+            for row in rows
+        ]
+
         groups = group_by_date(rows)
 
         for group in groups:
@@ -117,6 +135,22 @@ def get_groups(
     else:
 
         # spot prices available, group records by date
+
+        rows = [
+            (
+                row[r.id],
+                row[r.date],
+                row[r.name],
+                row[r.month],
+                row[r.year],
+                row[r.settle],
+                row[r.spot],
+                row[r.dte],
+                log(row[r.settle] / row[r.spot]) / (row[r.dte] / 365) \
+                if row[r.spot] > 0 and row[r.dte] > 0 else 0
+            ) 
+            for row in rows
+        ]
 
         groups = group_by_date(rows)
 
@@ -131,9 +165,10 @@ def clean(groups: List):
         [ 
             row 
             for row in group
-            if  row[r.dte]      > 0 and
-                row[r.settle]   > 0 and
-                row[r.spot]     > 0
+            if  row[r.dte]              > 0 and
+                row[r.settle]           > 0 and
+                row[r.spot]             > 0 and
+                row[r.discount_rate]    > 0
         ]
         for group in groups
     ]
@@ -365,7 +400,9 @@ def add_trace(
     ax_y:       int,
     ax_text:    int,
     fig_row:    int,
-    fig_col:    int
+    fig_col:    int,
+    mode:       str = "markers",
+    color:      str = None
 ):
 
     x       = [ r[ax_x] for r in rows ]
@@ -379,7 +416,8 @@ def add_trace(
                 "y": y,
                 "text": text,
                 "name": id,
-                "mode": "markers"
+                "mode": mode,
+                "marker_color": color
             }
         ),
         row = fig_row,

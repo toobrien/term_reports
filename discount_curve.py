@@ -134,7 +134,7 @@ if __name__ == "__main__":
 
     # get, sort, and and clean data
 
-    groups = get_groups(symbol, start, end)
+    groups = get_groups(symbol, start, end, True)
     rows = clean(groups)
 
     # add plots and show

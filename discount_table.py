@@ -15,7 +15,7 @@ DB_PATH     = config["db_path"]
 START       = config["start"]
 END         = config["end"]
 USE_SPOT    = False
-MAX_MONTHS  = 48
+MAX_MONTHS  = 60
 
 class sr(IntEnum):
 
