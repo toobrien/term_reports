@@ -157,7 +157,7 @@ def report(symbol: str):
                 x = [ month for i in range(len(settlements)) ],
                 name = month,
                 boxpoints = False,
-                marker_color = "blue"
+                marker_color = "red"
 
             ),
             row = 2,
