@@ -109,29 +109,46 @@ def get_groups(
         ).fetchall()
 
         rows = [
-            (
+            [
                 row[r.id],
                 row[r.date],
                 row[r.name],
                 row[r.month],
                 row[r.year],
                 row[r.settle],
-                row[r.spot],
+                None,
                 row[r.dte],
-                log(row[r.settle] / row[r.spot]) / (row[r.dte] / 365) \
-                if row[r.spot] > 0 and row[r.dte] > 0 else 0
-            )
+                None
+            ]
             for row in rows
         ]
 
         groups = group_by_date(rows)
 
+        # set spot price as m1 settle, compute discount
         for group in groups:
 
-            for row in group:
+            for i in range(len(group)):
+                
+                spot    = group[0][r.settle]
+                dte     = group[i][r.dte]
+                row     = group[i]
 
-                row[r.spot] = group[0][r.settle]
+                group[i] = (
+                    row[r.id],
+                    row[r.date],
+                    row[r.name],
+                    row[r.month],
+                    row[r.year],
+                    row[r.settle],
+                    spot,
+                    row[r.dte],
+                    log(row[r.settle] / spot) / (dte / 365) \
+                    if spot > 0 and dte > 0 else 0
+                )
 
+                pass
+                
     else:
 
         # spot prices available, group records by date
@@ -158,6 +175,7 @@ def get_groups(
 
 
 # strip negatives and 0 dte for log
+# only for use with spot = True
 
 def clean(groups: List):
 

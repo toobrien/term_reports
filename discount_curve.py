@@ -1,4 +1,3 @@
-from datetime import date
 from    util                    import  clean, get_groups, r
 from    json                    import  loads
 from    math                    import  log
