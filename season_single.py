@@ -5,7 +5,6 @@ from    sys                     import  argv
 from    util                    import  get_groups, r
 
 config      = loads(open("./config.json").read())
-DB_PATH     = config["db_path"]
 START       = config["start"]
 END         = config["end"]
 
