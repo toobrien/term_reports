@@ -151,7 +151,7 @@ def report(
 
             sign = corr_returns[i][-1] * corr_returns[j][-1]
 
-            cell_colors[i][j] = "#e2e2e2" if sign > 0 else "#EEF1E6" if sign == 0 else "#FEC9C9"
+            cell_colors[i][j] = "#939799" if i == j else "#e2e2e2" if sign > 0 else "#EEF1E6" if sign == 0 else "#FEC9C9"
 
             # format correlations as text
 
