@@ -26,6 +26,8 @@ def report(
 
     for group in groups:
 
+        today = group
+
         for rec in group[:max_terms]:
 
             id = rec[r.id].split("_")[1][-5:]
