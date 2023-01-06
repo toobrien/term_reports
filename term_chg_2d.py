@@ -4,8 +4,11 @@ from    numpy                   import  corrcoef
 import  plotly.graph_objects    as      go
 from    plotly.subplots         import  make_subplots
 from    sys                     import  argv
+from    time                    import  time
 from    util                    import  get_groups, r
 
+
+# colors: https://www.schemecolor.com/pastel-blue-and-red.php
 
 config      = loads(open("./config.json").read())
 START       = config["start"]
@@ -138,7 +141,6 @@ def report(
 
     # calculate direction divergences and color cells accordingly
 
-    direction   = [ [ 0 ] * matrix_dim for i in range(matrix_dim) ]
     cell_colors = [ [ None ] * matrix_dim for i in range(matrix_dim) ]
 
     for i in range(matrix_dim):
@@ -149,17 +151,17 @@ def report(
 
             sign = corr_returns[i][-1] * corr_returns[j][-1]
 
-            cell_colors[i][j] = "white" if sign >= 0 else "red"
+            cell_colors[i][j] = "#e2e2e2" if sign > 0 else "#EEF1E6" if sign == 0 else "#FEC9C9"
 
             # format correlations as text
 
-            todays_correlations[i][j] = f"{todays_correlations[i][j]: 0.3f}"
+            todays_correlations[i][j] = f"{todays_correlations[i][j]: 0.2f}"
 
     # expand matrices for row headers
 
     for i in range(matrix_dim):
 
-        cell_colors[i].insert(0, "white" if corr_returns[i][-1] >= 0 else "red")
+        cell_colors[i].insert(0, "#799FCB" if corr_returns[i][-1] > 0 else "#EEF1E6" if corr_returns[i][-1] == 0 else "#F9665E")
     
     for i in range(0, matrix_dim):
 
@@ -221,7 +223,7 @@ def report(
         go.Table(
             header = {
                 "values": [""] + corr_labels,
-                "fill_color": "gray"
+                "fill_color": "#EEF1E6"
             },
             cells = {
                 "values": todays_correlations,
@@ -238,9 +240,13 @@ def report(
 
 if __name__ == "__main__":
 
+    start = time()
+
     symbol      = argv[1]
     days        = int(argv[2])
     spread_len  = int(argv[3])
     max_terms   = int(argv[4])
 
     report(symbol, days, spread_len, max_terms)
+
+    print(f"elapsed: {time() - start: 0.1f}")
