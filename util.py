@@ -144,7 +144,7 @@ def get_groups(
                     spot,
                     row[r.dte],
                     log(row[r.settle] / spot) / (dte / 365) \
-                    if spot > 0 and dte > 0 else 0
+                    if row[r.settle] > 0 and spot > 0 and dte > 0 else 0
                 )
 
                 pass
