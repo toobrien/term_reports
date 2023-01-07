@@ -21,9 +21,10 @@ def report(
     max_terms:  int
 ):
 
-    groups      = get_groups(symbol, START, END, False)[-days:]
-    spreads     = {}
-    outrights   = {}
+    groups          = get_groups(symbol, START, END, False)[-days:]
+    spreads         = {}
+    outrights       = {}
+    outrights_prev  = {}
 
     # outrights
 
@@ -36,15 +37,26 @@ def report(
             id = rec[r.id].split("_")[1][-5:]
             id = id[0] + id[-2:]
 
+            date    = rec[r.date]
+            settle  = rec[r.settle]
+
             if id not in outrights:
 
                 outrights[id] = []
 
+            if id not in outrights_prev:
+
+                outrights_prev[id] = settle
+
+            chg = settle - outrights_prev[id]
+
+            outrights_prev[id] = settle
+
             outrights[id].append(
                 (
-                    rec[r.date],
-                    rec[r.settle],
-                    f"dte: {rec[r.dte]}"
+                    date,
+                    settle,
+                    f"chg: {chg:0.4f}<br>dte: {rec[r.dte]}"
                 )
             )
 
@@ -73,7 +85,7 @@ def report(
                 settle  = m1_rec_today[r.settle] - m2_rec_today[r.settle]
                 chg     = settle - (m1_rec_yesterday[r.settle] - m2_rec_yesterday[r.settle])
                 dte     = m1_rec_today[r.dte]
-                text    = f"{id}<br>{date}<br>chg: {chg:0.4f}<br>dte: {dte}"
+                text    = f"chg: {chg:0.4f}<br>dte: {dte}"
 
                 if id not in spreads:
 
