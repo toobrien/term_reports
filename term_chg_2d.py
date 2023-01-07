@@ -43,7 +43,8 @@ def report(
             outrights[id].append(
                 (
                     rec[r.date],
-                    rec[r.settle]
+                    rec[r.settle],
+                    f"dte: {rec[r.dte]}"
                 )
             )
 
@@ -71,7 +72,8 @@ def report(
                 id      = f"{m1_rec_today[r.id][-5]}{m1_rec_today[r.id][-1]}-{m2_rec_today[r.id][-5]}{m2_rec_today[r.id][-1]}"
                 settle  = m1_rec_today[r.settle] - m2_rec_today[r.settle]
                 chg     = settle - (m1_rec_yesterday[r.settle] - m2_rec_yesterday[r.settle])
-                text    = f"{id}<br>{date}<br>chg: {chg:0.4f}" 
+                dte     = m1_rec_today[r.dte]
+                text    = f"{id}<br>{date}<br>chg: {chg:0.4f}<br>dte: {dte}"
 
                 if id not in spreads:
 
@@ -81,7 +83,8 @@ def report(
                     (
                         date,
                         settle,
-                        text
+                        text,
+                        dte
                     )
                 )
 
@@ -112,7 +115,7 @@ def report(
 
         pad_length      = series_length - len(records)
         initial_value   = records[0][1]
-        corr_source[id] = [ ( None, initial_value, None ) ] * pad_length + records
+        corr_source[id] = [ ( None, initial_value ) ] * pad_length + records
 
     # compute todays and yesterdays correlations
 
@@ -192,7 +195,8 @@ def report(
                 go.Scatter(
                     {
                         "x":    [ rec[0] for rec in records ],
-                        "y":    [ rec[1] for rec in records ],     
+                        "y":    [ rec[1] for rec in records ],
+                        "text": [ rec[3] for rec in records ],  
                         "name": id
                     }
                 ),
