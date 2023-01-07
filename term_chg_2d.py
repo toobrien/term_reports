@@ -196,7 +196,7 @@ def report(
                     {
                         "x":    [ rec[0] for rec in records ],
                         "y":    [ rec[1] for rec in records ],
-                        "text": [ rec[3] for rec in records ],  
+                        "text": [ rec[2] for rec in records ],  
                         "name": id
                     }
                 ),
