@@ -4,6 +4,7 @@ from plotly.subplots        import make_subplots
 from requests               import get
 from sys                    import argv
 
+
 sym_to_idx = {
     "ZW":   "001602",
     "KE":   "001612",
@@ -32,9 +33,9 @@ sym_to_idx = {
     "RB":   "111659",
     "HO":   "022651",
     "VX":   "1170E1",
-    "YM":   "12460",
-    "ES":   "13874",
-    "NQ":   "20974",
+    "YM":   "12460+",
+    "ES":   "13874+",
+    "NQ":   "20974+",
     "RTY":  "239742",
     "NKD":  "240743",
     "SI":   "084691",
