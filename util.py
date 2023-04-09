@@ -1,15 +1,18 @@
+from            bisect                  import bisect_left
 from            datetime                import datetime
 from            enum                    import IntEnum
 from            json                    import loads
 from            math                    import log
 import          plotly.graph_objects    as     go
+from            requests                import get
 from            sqlite3                 import connect
 from            statistics              import correlation, StatisticsError
 from            typing                  import List
 
 
-DB_PATH = loads(open("./config.json").read())["db_path"]
-DB      = connect(DB_PATH)
+DB_PATH     = loads(open("./config.json").read())["db_path"]
+DB          = connect(DB_PATH)
+GROUP_CACHE = {}
 
 
 class r(IntEnum):
@@ -46,6 +49,12 @@ def get_groups(
     end:        str,
     use_spot:   bool
 ) -> List:
+
+    key = (symbol, start, end, use_spot)
+
+    if key in GROUP_CACHE:
+
+        return GROUP_CACHE[key]
 
     cur     = DB.cursor()
     groups  = []
@@ -171,7 +180,72 @@ def get_groups(
 
         groups = group_by_date(rows)
 
+    GROUP_CACHE[key] = groups
+
     return groups
+
+
+# returns a continuous contract of ohlcv for each of "term"
+
+def get_continuous(
+    symbol: str,
+    start:  str,
+    end:    str,
+    term:   str,
+    mode:   str
+):
+
+    groups  = get_groups(symbol, start, end, False)
+    series  = []
+
+    if mode == "nearest":
+
+        # schwager pg. 280
+
+        series = [ group[term] for group in groups ]
+    
+    elif mode == "returns":
+
+        for i in range(1, len(groups)):
+            
+            try:
+
+                cur     = groups[i][term]
+                prev    = groups[i - 1][term]
+
+                if cur[r.id] != prev[r.id]:
+
+                    # roll
+
+                    prev = groups[i - 1][term + 1]
+                
+                series.append(
+                    ( 
+                        cur[r.id],
+                        cur[r.date], 
+                        log(cur[r.settle] / prev[r.settle])
+                    )
+                )
+            
+            except Exception as e:
+
+                # negative price probably (or missing a term)... just skip
+
+                print(e)
+
+    elif mode == "constant":
+
+        # schwager pg. 281
+
+        pass
+
+    elif mode == "spread_adjusted":
+
+        # schwager pg. 282; use ratio instead of difference
+
+        pass
+
+    return series
 
 
 # strip negatives and 0 dte for log
@@ -441,3 +515,104 @@ def add_trace(
         row = fig_row,
         col = fig_col
     )
+
+
+# Commitment of Traders
+
+sym_to_idx = {
+    "ZW":   "001602",
+    "KE":   "001612",
+    "ZC":   "002602",
+    "ZO":   "004603",
+    "ZS":   "005602",
+    "ZL":   "007601",
+    "ZM":   "026603",
+    "ZR":   "039601",
+    "HE":   "054642",
+    "LE":   "057642",
+    "CT":   "033661",
+    "CC":   "073732",
+    "SB":   "080732",
+    "KC":   "083731",
+    "ZT":   "042601",
+    "ZF":   "044601",
+    "ZN":   "043602",
+    "TN":   "043607",
+    "ZB":   "020601",
+    "FF":   "045601",
+    "S3":   "134741",
+    "S1":   "134742",
+    "NG":   "023651",
+    "CL":   "067651",
+    "RB":   "111659",
+    "HO":   "022651",
+    "VX":   "1170E1",
+    "YM":   "12460+",
+    "ES":   "13874+",
+    "NQ":   "20974+",
+    "RTY":  "239742",
+    "NKD":  "240743",
+    "SI":   "084691",
+    "HG":   "085692",
+    "GC":   "088691",
+    "PA":   "075651",
+    "PL":   "076691",
+    "ALI":  "191651",
+    "6R":   "089741",
+    "6C":   "090741",
+    "6S":   "092741",
+    "6M":   "095741",
+    "6B":   "096742",
+    "6J":   "097741",
+    "6E":   "099741",
+    "6L":   "102741",
+    "6Z":   "122741",
+    "BTC":  "133741"
+}
+
+
+class cot_rec(IntEnum):
+
+    date        = 0
+    comm_long   = 1
+    comm_short  = 2
+    comm_net    = 3
+    spec_long   = 4
+    spec_short  = 5
+    spec_net    = 6
+    non_long    = 7
+    non_short   = 8
+    non_net     = 9
+    oi          = 10
+
+def get_cot(symbol, start, end):
+
+    index = sym_to_idx[symbol]
+
+    res = get(f"https://api.tvix.xyz/cot/contract/{index}").json()
+
+    dates   = list(reversed(res["records"].keys()))
+    i       = bisect_left(dates, start) 
+    j       = bisect_left(dates, end)
+    recs    = list(reversed(res["records"].values()))[i:j]
+
+    cot_recs = [
+        (
+            rec["date"],
+            int(rec["commercial_long_contracts"]),
+            int(rec["commercial_short_contracts"]),
+            int(rec["commercial_long_contracts"]) - int(rec["commercial_short_contracts"]),
+            int(rec["noncommercial_long_contracts"]),
+            int(rec["noncommercial_short_contracts"]),
+            int(rec["noncommercial_long_contracts"]) - int(rec["noncommercial_short_contracts"]),
+            int(rec["nonreportable_long_contracts"]),
+            int(rec["nonreportable_short_contracts"]),
+            int(rec["nonreportable_long_contracts"]) - int(rec["nonreportable_short_contracts"]),
+            int(rec["open_interest"])
+        )
+        for rec in recs
+    ]
+
+    return cot_recs
+
+

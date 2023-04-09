@@ -1,61 +1,7 @@
-from bisect                 import bisect_left
 from plotly.graph_objects   import Scatter
 from plotly.subplots        import make_subplots
-from requests               import get
 from sys                    import argv
-
-
-sym_to_idx = {
-    "ZW":   "001602",
-    "KE":   "001612",
-    "ZC":   "002602",
-    "ZO":   "004603",
-    "ZS":   "005602",
-    "ZL":   "007601",
-    "ZM":   "026603",
-    "ZR":   "039601",
-    "HE":   "054642",
-    "LE":   "057642",
-    "CT":   "033661",
-    "CC":   "073732",
-    "SB":   "080732",
-    "KC":   "083731",
-    "ZT":   "042601",
-    "ZF":   "044601",
-    "ZN":   "043602",
-    "TN":   "043607",
-    "ZB":   "020601",
-    "FF":   "045601",
-    "S3":   "134741",
-    "S1":   "134742",
-    "NG":   "023651",
-    "CL":   "067651",
-    "RB":   "111659",
-    "HO":   "022651",
-    "VX":   "1170E1",
-    "YM":   "12460+",
-    "ES":   "13874+",
-    "NQ":   "20974+",
-    "RTY":  "239742",
-    "NKD":  "240743",
-    "SI":   "084691",
-    "HG":   "085692",
-    "GC":   "088691",
-    "PA":   "075651",
-    "PL":   "076691",
-    "ALI":  "191651",
-    "6R":   "089741",
-    "6C":   "090741",
-    "6S":   "092741",
-    "6M":   "095741",
-    "6B":   "096742",
-    "6J":   "097741",
-    "6E":   "099741",
-    "6L":   "102741",
-    "6Z":   "122741",
-    "BTC":  "133741"
-}
-
+from util                   import cot_rec, get_cot
 
 if __name__ == "__main__":
 
@@ -73,44 +19,14 @@ if __name__ == "__main__":
 
     i = 1
 
-    for sym in symbols:
+    for symbol in symbols:
         
-        index = sym_to_idx[sym]
+        cot_recs = get_cot(symbol, start, end)
 
-        res = get(f"https://api.tvix.xyz/cot/contract/{index}").json()
-
-        dates       = []
-        comm_long   = []
-        comm_short  = []
-        comm_net    = []
-        spec_long   = []
-        spec_short  = []
-        spec_net    = []
-        non_long    = []
-        non_short   = []
-        non_net     = []
-        oi          = []
-
-        recs = reversed(res["records"].values())
-
-        for rec in recs:
-
-            dates.append(rec["date"])
-            
-            comm_long.append(int(rec["commercial_long_contracts"]))
-            comm_short.append(int(rec["commercial_short_contracts"]))
-            comm_net.append(comm_long[-1] - comm_short[-1])
-
-            spec_long.append(int(rec["noncommercial_long_contracts"]))
-            spec_short.append(int(rec["noncommercial_short_contracts"]))
-            spec_net.append(spec_long[-1] - spec_short[-1])
-            
-            non_long.append(int(rec["nonreportable_long_contracts"]))
-            non_short.append(int(rec["nonreportable_short_contracts"]))
-            non_net.append(non_long[-1] - non_short[-1])
-
-        j = bisect_left(dates, start) 
-        k = bisect_left(dates, end)
+        dates       = [ r[cot_rec.date]     for r in cot_recs ]
+        comm_net    = [ r[cot_rec.comm_net] for r in cot_recs ]
+        spec_net    = [ r[cot_rec.spec_net] for r in cot_recs ]
+        non_net     = [ r[cot_rec.non_net]  for r in cot_recs ]
 
         for trace_data in [
             ( comm_net, "#0000FF", "comm" ),
@@ -120,12 +36,12 @@ if __name__ == "__main__":
 
             fig.add_trace(
                 Scatter(
-                    x       = dates[j:k],
-                    y       = trace_data[0][j:k],
+                    x       = dates,
+                    y       = trace_data[0],
                     marker  = {
                         "color": trace_data[1]
                     },
-                    name    = f"{sym} {trace_data[2]}"
+                    name    = f"{symbol} {trace_data[2]}"
                 ),
                 row = i,
                 col = 1
