@@ -6,7 +6,17 @@ from    typing                  import  List
 from    util                    import  cot_rec, get_continuous, get_cot, r
 
 
+COMM_COLOR = "#0000FF"
+SPEC_COLOR = "#FF0000"
+NON_COLOR  = "#FF00FF"
+
+
 def get_stats(cot_recs: List, returns, field, window):
+
+    val_by_date = {
+        rec[cot_rec.date] : rec[field]
+        for rec in cot_recs
+    }
 
     chg_by_date = {
         cot_recs[i][cot_rec.date] : (cot_recs[i][field] - cot_recs[i - 1][field]) / abs(cot_recs[i - 1][field])
@@ -16,7 +26,7 @@ def get_stats(cot_recs: List, returns, field, window):
     ret_by_date = { ret[1] : ret[2] for ret in returns }
 
     zipped = [
-        (date, ret_by_date[date], chg)
+        (date, ret_by_date[date], chg, val_by_date[date])
         for date, chg in chg_by_date.items()
         if date in ret_by_date
     ]
@@ -24,13 +34,20 @@ def get_stats(cot_recs: List, returns, field, window):
     dates   = [ rec[0] for rec in zipped ]
     rets    = [ rec[1] for rec in zipped ]
     chgs    = [ rec[2] for rec in zipped ]
+    vals    = [ rec[3] for rec in zipped ]
 
     corrs = [
         correlation(rets[i - window:i], chgs[i - window:i])
         for i in range(window, len(dates))
     ]
 
-    return ( dates, chgs, corrs )
+    pcts = [
+        (vals[i] - min(vals[i - window:i + 1])) / 
+        (max(vals[i - window:i + 1]) - min(vals[i - window:i + 1]))
+        for i in range(window, len(dates))
+    ]
+
+    return ( dates, chgs, corrs, pcts )
 
 
 if __name__ == "__main__":
@@ -73,10 +90,10 @@ if __name__ == "__main__":
             if rec[r.date] in dates
         ]
     
-    comm_dates, comm_chgs, comm_corrs   = get_stats(cot_recs, returns, cot_rec.comm_net, window)
-    spec_dates, spec_chgs, spec_corrs   = get_stats(cot_recs, returns, cot_rec.spec_net, window)
+    comm_dates, comm_chgs, comm_corrs, comm_pcts   = get_stats(cot_recs, returns, cot_rec.comm_net, window)
+    spec_dates, spec_chgs, spec_corrs, spec_pcts   = get_stats(cot_recs, returns, cot_rec.spec_net, window)
 
-    fig = make_subplots(rows = 3, cols = 1)
+    fig = make_subplots(rows = 4, cols = 1)
 
     fig.add_trace(
         go.Scatter(
@@ -90,50 +107,12 @@ if __name__ == "__main__":
         col = 1
     )
 
-    '''
-    fig.add_trace(
-        go.Bar(
-            {
-                "x":    dates,
-                "y":    cum_rets,
-                "name": "returns"
-            }
-        ),
-        row = 2,
-        col = 1
-    )
-
-    fig.add_trace(
-        go.Bar(
-            {
-                "x":    comm_dates,
-                "y":    comm_chgs,
-                "name": "comm_chgs"
-            }
-        ),
-        row = 2,
-        col = 1
-    )
-
-    fig.add_trace(
-        go.Bar(
-            {
-                "x":    spec_dates,
-                "y":    spec_chgs,
-                "name": "spec_chgs"
-            }
-        ),
-        row = 2,
-        col = 1
-    )
-    '''
-
     fig.add_trace(
         go.Scatter(
             {
                 "x":    dates,
                 "y":    [ rec[cot_rec.comm_net] for rec in cot_recs ],
-                "marker": { "color": "#0000FF" },
+                "marker": { "color": COMM_COLOR },
                 "name": "comm_net"
             }
         ),
@@ -145,7 +124,7 @@ if __name__ == "__main__":
             {
                 "x":    dates,
                 "y":    [ rec[cot_rec.spec_net] for rec in cot_recs ],
-                "marker": { "color": "#FF0000" },
+                "marker": { "color": SPEC_COLOR },
                 "name": "spec_net"
             }
         ),
@@ -157,7 +136,7 @@ if __name__ == "__main__":
             {
                 "x":    dates,
                 "y":    [ rec[cot_rec.non_net] for rec in cot_recs ],
-                "marker": { "color": "#FF00FF" },
+                "marker": { "color": NON_COLOR },
                 "name": "non_net"
             }
         ),
@@ -167,9 +146,10 @@ if __name__ == "__main__":
     fig.add_trace(
         go.Scatter(
             {
-                "x":    comm_dates[window:],
-                "y":    comm_corrs,
-                "name": f"comm_corr[{window}]"
+                "x":        comm_dates[window:],
+                "y":        comm_corrs,
+                "marker":   { "color": COMM_COLOR },
+                "name":     f"comm_corr[{window}]"
             }
         ),
         row = 3,
@@ -179,15 +159,40 @@ if __name__ == "__main__":
     fig.add_trace(
         go.Scatter(
             {
-                "x":    spec_dates[window:],
-                "y":    spec_corrs,
-                "name": f"spec_corr[{window}]"
+                "x":        spec_dates[window:],
+                "y":        spec_corrs,
+                "marker":   { "color": SPEC_COLOR },
+                "name":     f"spec_corr[{window}]"
             }
         ),
         row = 3,
         col = 1
     )
 
-    fig.show()
+    fig.add_trace(
+        go.Scatter(
+            {
+                "x":        comm_dates[window:],
+                "y":        comm_pcts,
+                "marker":   { "color": COMM_COLOR },
+                "name":     f"comm_pct[{window}]"
+            }
+        ),
+        row = 4,
+        col = 1
+    )
 
-    pass
+    fig.add_trace(
+        go.Scatter(
+            {
+                "x":        spec_dates[window:],
+                "y":        spec_pcts,
+                "marker":   { "color": SPEC_COLOR },
+                "name":     f"comm_pct[{window}]"
+            }
+        ),
+        row = 4,
+        col = 1
+    )
+
+    fig.show()
