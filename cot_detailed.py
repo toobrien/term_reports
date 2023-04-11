@@ -81,8 +81,9 @@ if __name__ == "__main__":
     fig.add_trace(
         go.Scatter(
             {
-                "x": dates,
-                "y": prices
+                "x":    dates,
+                "y":    prices,
+                "name": "price"
             }
         ),
         row = 1,
