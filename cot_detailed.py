@@ -42,6 +42,8 @@ def get_stats(cot_recs: List, returns, field, window):
     vals    = [ rec[3] for rec in zipped ]
     ois     = [ rec[4] for rec in zipped ]
 
+    # bad
+    
     corrs = [
         correlation(rets[i - window:i], chgs[i - window:i])
         for i in range(window, len(dates))
