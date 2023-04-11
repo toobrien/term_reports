@@ -89,14 +89,21 @@ if __name__ == "__main__":
             rec[r.settle] for rec in nearest
             if rec[r.date] in dates
         ]
-    
+    oi      = [ rec[cot_rec.oi] for rec in cot_recs[1:] ]
+
     comm_dates, comm_chgs, comm_corrs, comm_pcts   = get_stats(cot_recs, returns, cot_rec.comm_net, window)
     spec_dates, spec_chgs, spec_corrs, spec_pcts   = get_stats(cot_recs, returns, cot_rec.spec_net, window)
 
     fig = make_subplots(
-            rows = 4, 
-            cols = 1,
-            subplot_titles = ( "price", "net", "corr", "pct" )
+            rows            = 4, 
+            cols            = 1,
+            subplot_titles  = ( "price", "net", "corr", "pct" ),
+            specs           = [ 
+                                [ {} ],
+                                [ { "secondary_y": True } ],
+                                [ {} ],
+                                [ {} ]
+                            ]
         )
 
     fig.add_trace(
@@ -114,37 +121,57 @@ if __name__ == "__main__":
     fig.add_trace(
         go.Scatter(
             {
-                "x":    dates,
-                "y":    [ rec[cot_rec.comm_net] for rec in cot_recs ],
-                "marker": { "color": COMM_COLOR },
-                "name": "comm_net"
+                "x":            dates,
+                "y":            [ rec[cot_rec.comm_net] for rec in cot_recs ],
+                "marker":       { "color": COMM_COLOR },
+                "name":         "comm_net"
             }
         ),
-        row = 2, col = 1
+        row         = 2,
+        col         = 1,
+        secondary_y = False,
     )
 
     fig.add_trace(
         go.Scatter(
             {
-                "x":    dates,
-                "y":    [ rec[cot_rec.spec_net] for rec in cot_recs ],
-                "marker": { "color": SPEC_COLOR },
-                "name": "spec_net"
+                "x":            dates,
+                "y":            [ rec[cot_rec.spec_net] for rec in cot_recs ],
+                "marker":       { "color": SPEC_COLOR },
+                "name":         "spec_net"
             }
         ),
-        row = 2, col = 1
+        row         = 2,
+        col         = 1,
+        secondary_y = False,
     )
 
     fig.add_trace(
         go.Scatter(
             {
-                "x":    dates,
-                "y":    [ rec[cot_rec.non_net] for rec in cot_recs ],
-                "marker": { "color": NON_COLOR },
-                "name": "non_net"
+                "x":            dates,
+                "y":            [ rec[cot_rec.non_net] for rec in cot_recs ],
+                "marker":       { "color": NON_COLOR },
+                "name":         "non_net"
             }
         ),
-        row = 2, col = 1
+        row         = 2,
+        col         = 1,
+        secondary_y = False,
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            {
+                "x":            dates,
+                "y":            oi,
+                "marker":       { "color": "#00FF00" },
+                "name":         "oi"
+            }
+        ),
+        row         = 2,
+        col         = 1,
+        secondary_y = True,
     )
 
     fig.add_trace(
