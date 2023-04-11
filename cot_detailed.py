@@ -43,7 +43,7 @@ def get_stats(cot_recs: List, returns, field, window):
     ois     = [ rec[4] for rec in zipped ]
 
     # bad
-    
+
     corrs = [
         correlation(rets[i - window:i], chgs[i - window:i])
         for i in range(window, len(dates))
@@ -217,7 +217,7 @@ if __name__ == "__main__":
                 "x":        spec_dates,
                 "y":        spec_adj,
                 "marker":   { "color": SPEC_COLOR },
-                "name":     f"comm_adj"
+                "name":     f"spec_adj"
             }
         ),
         row = 3,
@@ -242,7 +242,7 @@ if __name__ == "__main__":
                 "x":        spec_dates,
                 "y":        spec_adj_rng,
                 "marker":   { "color": SPEC_COLOR },
-                "name":     f"comm_adj_rng"
+                "name":     f"spec_adj_rng"
             }
         ),
         row = 4,
