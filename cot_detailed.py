@@ -1,3 +1,4 @@
+from    math                    import  log
 import  plotly.graph_objects    as      go
 from    plotly.subplots         import  make_subplots
 from    statistics              import  correlation
@@ -28,7 +29,7 @@ def get_stats(cot_recs: List, returns, field, window):
         for i in range(1, len(cot_recs))
     }
 
-    ret_by_date = { ret[1] : ret[2] for ret in returns }
+    ret_by_date = { ret[0] : ret[1] for ret in returns }
 
     zipped = [
         (date, ret_by_date[date], chg, val_by_date[date], oi_by_date[date])
@@ -71,6 +72,8 @@ def get_stats(cot_recs: List, returns, field, window):
     return ( dates, chgs, corrs, adj_vals, adj_rng )
 
 
+# example usage: python cot_detailed.py 2018-01-1 2024-01-01 NG 12
+
 if __name__ == "__main__":
 
     start   = argv[1]
@@ -79,38 +82,33 @@ if __name__ == "__main__":
     window  = int(argv[4])
 
     cot_recs    = get_cot(symbol, start, end)
-    nearest     = get_continuous(symbol, start, end, 0, "nearest")
-    returns     = get_continuous(symbol, start, end, 0, "returns")
-    
-    cum_rets    = []
-    cur_ret     = 0
+    continuous  = get_continuous(symbol, start, end, 0, "spread_adjusted")
     init_date   = cot_recs[0][cot_rec.date]
+    dates       = [ rec[cot_rec.date] for rec in cot_recs ]
+    prices      = [ 
+                    rec[r.settle] for rec in continuous
+                    if rec[r.date] in dates
+                ]
+    oi          = [ rec[cot_rec.oi] for rec in cot_recs ]
 
-    while returns[cur_ret][1] <= init_date:
+    # compute weekly returns
 
-        cur_ret += 1
+    settles = [ 
+                ( 
+                    rec[r.date],
+                    rec[r.settle] 
+                ) 
+                for rec in continuous 
+                if rec[r.date] in dates
+            ]
 
-    for i in range (1, len(cot_recs)):
-
-        cur_cot     = cot_recs[i]
-        prev_cot    = cot_recs[i - 1]
-        cum_ret     = 0
-
-        while returns[cur_ret][1] <= cur_cot[cot_rec.date]:
-
-            ret_rec = returns[cur_ret]
-
-            cum_ret += returns[cur_ret][2]
-            cur_ret += 1
-        
-        cum_rets.append(cum_ret)
-
-    dates   = [ rec[cot_rec.date] for rec in cot_recs[1:] ]
-    prices  = [ 
-            rec[r.settle] for rec in nearest
-            if rec[r.date] in dates
-        ]
-    oi      = [ rec[cot_rec.oi] for rec in cot_recs[1:] ]
+    returns = [
+        ( 
+            settles[i][0],
+            log(settles[i][1] / settles[i - 1][1])
+        )
+        for i in range(1, len(settles))
+    ]
 
     comm_dates, comm_chgs, comm_corrs, comm_adj, comm_adj_rng = get_stats(cot_recs, returns, cot_rec.comm_net, window)
     spec_dates, spec_chgs, spec_corrs, spec_adj, spec_adj_rng = get_stats(cot_recs, returns, cot_rec.spec_net, window)
@@ -119,7 +117,7 @@ if __name__ == "__main__":
             rows                = 5, 
             cols                = 1,
             shared_xaxes        = True,
-            subplot_titles      = ( "price", "net", "adj", "adj_rng", "corrs" ),
+            subplot_titles      = ( f"{symbol} price", "net", "adj", "adj_rng", "corrs" ),
             specs               = [ 
                                     [ {} ],
                                     [ { "secondary_y": True } ],
@@ -135,7 +133,7 @@ if __name__ == "__main__":
             {
                 "x":    dates,
                 "y":    prices,
-                "name": "price"
+                "name": f"{symbol} continuous (adjusted)"
             }
         ),
         row = 1,
