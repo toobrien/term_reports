@@ -117,7 +117,7 @@ if __name__ == "__main__":
             rows                = 4, 
             cols                = 1,
             shared_xaxes        = True,
-            subplot_titles      = ( f"{symbol} price", "net", "adj", "corrs" ),
+            subplot_titles      = ( f"{symbol} price", "net", "oi adj", "corrs" ),
             specs               = [ 
                                     [ {} ],
                                     [ { "secondary_y": True } ],
@@ -201,7 +201,7 @@ if __name__ == "__main__":
                 "x":        comm_dates,
                 "y":        comm_adj,
                 "marker":   { "color": COMM_COLOR },
-                "name":     f"comm_adj"
+                "name":     f"comm_oi_adj"
             }
         ),
         row = 3,
@@ -214,7 +214,7 @@ if __name__ == "__main__":
                 "x":        spec_dates,
                 "y":        spec_adj,
                 "marker":   { "color": SPEC_COLOR },
-                "name":     f"spec_adj"
+                "name":     f"spec_oi_adj"
             }
         ),
         row = 3,
