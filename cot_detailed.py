@@ -130,8 +130,8 @@ if __name__ == "__main__":
     fig.add_trace(
         go.Scatter(
             {
-                "x":    dates,
-                "y":    prices,
+                "x":    [ rec[r.date] for rec in continuous ],
+                "y":    [ rec[r.settle] for rec in continuous ],
                 "name": f"{symbol} (adjusted)"
             }
         ),
