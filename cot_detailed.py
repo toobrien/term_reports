@@ -114,14 +114,13 @@ if __name__ == "__main__":
     spec_dates, spec_chgs, spec_corrs, spec_adj, spec_adj_rng = get_stats(cot_recs, returns, cot_rec.spec_net, window)
 
     fig = make_subplots(
-            rows                = 5, 
+            rows                = 4, 
             cols                = 1,
             shared_xaxes        = True,
-            subplot_titles      = ( f"{symbol} price", "net", "adj", "adj_rng", "corrs" ),
+            subplot_titles      = ( f"{symbol} price", "net", "adj", "corrs" ),
             specs               = [ 
                                     [ {} ],
                                     [ { "secondary_y": True } ],
-                                    [ {} ],
                                     [ {} ],
                                     [ {} ]
                                 ],
@@ -133,7 +132,7 @@ if __name__ == "__main__":
             {
                 "x":    dates,
                 "y":    prices,
-                "name": f"{symbol} continuous (adjusted)"
+                "name": f"{symbol} (adjusted)"
             }
         ),
         row = 1,
@@ -221,6 +220,8 @@ if __name__ == "__main__":
         row = 3,
         col = 1
     )
+
+    '''
     fig.add_trace(
         go.Scatter(
             {
@@ -246,6 +247,7 @@ if __name__ == "__main__":
         row = 4,
         col = 1
     )
+    '''
 
     fig.add_trace(
         go.Scatter(
@@ -256,7 +258,7 @@ if __name__ == "__main__":
                 "name":     f"comm_corr[{window}]"
             }
         ),
-        row = 5,
+        row = 4,
         col = 1
     )
 
@@ -269,7 +271,7 @@ if __name__ == "__main__":
                 "name":     f"spec_corr[{window}]"
             }
         ),
-        row = 5,
+        row = 4,
         col = 1
     )
 
