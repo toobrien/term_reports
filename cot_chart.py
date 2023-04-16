@@ -1,7 +1,10 @@
 from plotly.graph_objects   import Scatter
 from plotly.subplots        import make_subplots
 from sys                    import argv
-from util                   import cot_rec, get_cot
+from v2.cot_v2_api          import format, get_contract, report
+from v2.recs                import futs_only
+
+# sample usage: python cot_chart.py 2018-01-01 2024-01-01 CL [ ... ] RB
 
 if __name__ == "__main__":
 
@@ -21,22 +24,17 @@ if __name__ == "__main__":
 
     for symbol in symbols:
         
-        cot_recs = get_cot(symbol, start, end)
-
-        dates       = [ r[cot_rec.date]     for r in cot_recs ]
-        comm_net    = [ r[cot_rec.comm_net] for r in cot_recs ]
-        spec_net    = [ r[cot_rec.spec_net] for r in cot_recs ]
-        non_net     = [ r[cot_rec.non_net]  for r in cot_recs ]
+        con = get_contract(report.futs_only, symbol, format.convenience, start, end)
 
         for trace_data in [
-            ( comm_net, "#0000FF", "comm" ),
-            ( spec_net, "#FF0000", "spec" ),
-            ( non_net,  "#FFFF00", "non"  )
+            ( con[futs_only.comm_net_pct],      "#0000FF", "comm net pct"       ),
+            ( con[futs_only.noncomm_net_pct],   "#FF0000", "noncomm net pct"    ),
+            ( con[futs_only.nonrep_net_pct],    "#FFFF00", "nonrep net pct"     )
         ]:
 
             fig.add_trace(
                 Scatter(
-                    x       = dates,
+                    x       = con[futs_only.date],
                     y       = trace_data[0],
                     marker  = {
                         "color": trace_data[1]

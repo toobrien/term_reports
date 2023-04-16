@@ -4,7 +4,7 @@ from    plotly.subplots         import  make_subplots
 from    statistics              import  correlation
 from    sys                     import  argv
 from    typing                  import  List
-from    util                    import  cot_rec, get_continuous, get_cot, r
+from    util                    import  get_continuous, r
 from    v2.cot_v2_api           import  format, get_contract, report
 from    v2.recs                 import  futs_only
 
