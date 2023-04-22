@@ -1,5 +1,5 @@
 {
-    "db_path":  "../data/futures.db",
+    "db_path":  "../data/futs.parquet",
     "start":    "1900-01-01",
     "end":      "2050-01-01",
     "enabled": [

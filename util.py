@@ -1,17 +1,18 @@
-from            bisect                  import bisect_left
-from            datetime                import datetime
-from            enum                    import IntEnum
-from            json                    import loads
-from            math                    import log
-import          plotly.graph_objects    as     go
-from            requests                import get
-from            sqlite3                 import connect
-from            statistics              import correlation, StatisticsError
-from            typing                  import List
+from            bisect                  import  bisect_left
+from            datetime                import  datetime
+from            enum                    import  IntEnum
+from            json                    import  loads
+from            math                    import  log
+import          plotly.graph_objects    as      go
+import          polars                  as      pl
+from            requests                import  get
+from            statistics              import  correlation, StatisticsError
+from            typing                  import  List
 
-
+BEGIN       = "1900-01-01"
+END         = "2100-01-01"
 DB_PATH     = loads(open("./config.json").read())["db_path"]
-DB          = connect(DB_PATH)
+DB          = pl.read_parquet(DB_PATH)
 GROUP_CACHE = {}
 
 
@@ -46,139 +47,83 @@ class rs(IntEnum):
 def get_groups(
     symbol:     str, 
     start:      str,
-    end:        str,
-    use_spot:   bool
+    end:        str
 ) -> List:
 
-    key = (symbol, start, end, use_spot)
+    key = (symbol, start, end)
 
     if key in GROUP_CACHE:
 
         return GROUP_CACHE[key]
 
-    cur     = DB.cursor()
-    groups  = []
-    rows    = []
+    if not start:
 
-    if use_spot:
+        start = BEGIN
 
-        rows = cur.execute(
-            f'''
-                SELECT DISTINCT
-                    ohlc.contract_id,
-                    ohlc.date,
-                    ohlc.name,
-                    ohlc.month,
-                    CAST(ohlc.year AS INT),
-                    ohlc.settle,
-                    spot.price,
-                    CAST(julianday(metadata.to_date) - julianday(ohlc.date) AS INT)
-                FROM ohlc
-                    INNER JOIN 
-                        spot ON ohlc.name = spot.symbol AND ohlc.date = spot.date
-                    INNER JOIN 
-                        metadata ON ohlc.contract_id = metadata.contract_id
-                WHERE
-                    ohlc.name = "{symbol}" AND
-                    ohlc.date BETWEEN "{start}" AND "{end}"
-                ORDER BY 
-                    ohlc.date ASC, ohlc.year ASC, ohlc.month ASC
-                ;
-            '''
-        ).fetchall()
+    if not end:
 
-    if not rows:
+        end = END
 
-        # either spot disabled, or no spot prices for this symbol,
-        # use m1 as approximation 
+    filtered = DB.filter(
+                                (pl.col("name") == symbol) &
+                                (pl.col("date") < start)   & 
+                                (pl.col("date") >= end)
+                            ).sort(
+                                [ "date", "year", "month" ]
+                            )
+    
+    rows = filtered.select(
+                            [
+                                "contract_id",
+                                "date",
+                                "name",
+                                "month",
+                                "year",
+                                "settle",
+                                "dte"
+                            ]
+                        ).rows()
+    groups      = []
+    cur_date    = rows[0][1]
+    spot        = rows[0][5] # use front month price as "spot"... hack
+    cur_group   = []
+
+    for row in rows:
+
+        if row[r.date] != cur_date:
+
+            # new day
+
+            # compute discount
+            
+            for rec in cur_group:
+
+                rec[r.discount_rate] =  log(row[r.settle] / spot) / (rec[r.dte] / 365) \
+                                        if rec[r.settle] > 0 and spot > 0 and rec[r.dte] > 0 else 0
+
+            # add group to output and set next group's date, spot
+            
+            groups.append(cur_group)
+
+            cur_date    = row[1]
+            spot        = row[5]
+            cur_group   = []
         
-        cur.row_factory = lambda cur, row: list(row)
-        
-        rows = cur.execute(
-            f'''
-                SELECT DISTINCT
-                    ohlc.contract_id,
-                    ohlc.date,
-                    ohlc.name,
-                    ohlc.month,
-                    CAST(ohlc.year AS INT),
-                    ohlc.settle,
-                    NULL,
-                    CAST(julianday(metadata.to_date) - julianday(ohlc.date) AS INT)
-                FROM ohlc
-                    INNER JOIN 
-                        metadata ON ohlc.contract_id = metadata.contract_id
-                WHERE
-                    ohlc.name = "{symbol}" AND
-                    ohlc.date BETWEEN "{start}" AND "{end}"
-                ORDER BY 
-                    ohlc.date ASC, ohlc.year ASC, ohlc.month ASC
-                ;
-            '''
-        ).fetchall()
-
-        rows = [
-            [
-                row[r.id],
-                row[r.date],
-                row[r.name],
-                row[r.month],
-                row[r.year],
-                row[r.settle],
-                None,
-                row[r.dte],
-                None
-            ]
-            for row in rows
+        rec = [
+            row[0],         # id
+            row[1],         # date
+            row[2],         # name (symbol)
+            row[3],         # month
+            int(row[4]),    # year
+            row[5],         # settle
+            spot,           # "spot" (M1 price)
+            row[6],         # dte
+            None            # discount rate
         ]
 
-        groups = group_by_date(rows)
-
-        # set spot price as m1 settle, compute discount
-        for group in groups:
-
-            for i in range(len(group)):
-                
-                spot    = group[0][r.settle]
-                dte     = group[i][r.dte]
-                row     = group[i]
-
-                group[i] = (
-                    row[r.id],
-                    row[r.date],
-                    row[r.name],
-                    row[r.month],
-                    row[r.year],
-                    row[r.settle],
-                    spot,
-                    row[r.dte],
-                    log(row[r.settle] / spot) / (dte / 365) \
-                    if row[r.settle] > 0 and spot > 0 and dte > 0 else 0
-                )
-
-                pass
-                
-    else:
-
-        # spot prices available, group records by date
-
-        rows = [
-            (
-                row[r.id],
-                row[r.date],
-                row[r.name],
-                row[r.month],
-                row[r.year],
-                row[r.settle],
-                row[r.spot],
-                row[r.dte],
-                log(row[r.settle] / row[r.spot]) / (row[r.dte] / 365) \
-                if row[r.spot] > 0 and row[r.dte] > 0 else 0
-            ) 
-            for row in rows
-        ]
-
-        groups = group_by_date(rows)
+        cur_group.append(rec)
+    
+    groups.append(cur_group)
 
     GROUP_CACHE[key] = groups
 
@@ -264,31 +209,6 @@ def clean(groups: List):
         for group in groups
         if group
     ]
-
-    return groups
-
-
-def group_by_date(rows: List):
-
-    groups      = []
-    cur_date    = rows[0][r.date]
-    cur_set     = []
-
-    for i in range(len(rows)):
-
-        row_date = rows[i][r.date]
-
-        if row_date != cur_date:
-
-            groups.append(cur_set)
-            cur_date = row_date
-            cur_set  = [ rows[i] ]
-        
-        else:
-            
-            cur_set.append(rows[i])
-
-    groups.append(cur_set)
 
     return groups
 
