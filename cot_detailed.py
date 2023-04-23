@@ -5,8 +5,8 @@ from    statistics              import  correlation
 from    sys                     import  argv
 from    typing                  import  List
 from    util                    import  get_continuous, r
-from    v2.cot_v2_api           import  format, get_contract, report
-from    v2.recs                 import  futs_only
+from    cot.cot_v2_api          import  format, get_contract, report
+from    cot.recs                import  futs_only
 
 
 # usage: python cot_detailed.py 2018-01-1 2024-01-01 NG 12
