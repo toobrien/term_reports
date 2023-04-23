@@ -6,16 +6,15 @@ from    statistics  import median_low
 from    sys         import argv
 from    time        import time
 from    typing      import List
-from    util        import clean, get_groups, r, rs, spreads
+from    util        import get_groups, r, rs, spreads
 
 
-config  = loads(open("./config.json").read())
+# usage: python discount_table.py [ all | CL HO RB NG ... ]
 
-DB_PATH     = config["db_path"]
-START       = config["start"]
-END         = config["end"]
-USE_SPOT    = False
+
+CONFIG      = loads(open("./config.json").read())
 MAX_MONTHS  = 60
+
 
 class sr(IntEnum):
 
@@ -70,9 +69,11 @@ def report(groups: List):
 
         for row in group:
 
-            avg_discount += row[r.settle] / row[r.spot] - 1
+            avg_discount += row[r.settle] / row[r.spot] - 1 \
+                            if row[r.spot] != 0 else 0
 
         avg_discount /= len(group)
+
         discounts.append(avg_discount)
 
     latest_discount = discounts[-1]
@@ -129,6 +130,7 @@ def report(groups: List):
         size_season = sorted(
             [
                 spread_row[rs.settle] / spread_row[rs.spot]
+                if spread_row[rs.spot] != 0 else 0
                 for spread_row in by_season[spread[rs.month]]
             ]
         )
@@ -187,11 +189,11 @@ if __name__ == "__main__":
     
     else:
 
-        symbols = config["enabled"]
+        symbols = CONFIG["enabled"]
 
     for symbol in symbols:
         
-        groups = clean(get_groups(symbol, START, END, USE_SPOT))
+        groups = get_groups(symbol)
 
         report(groups)
 

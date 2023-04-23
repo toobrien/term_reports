@@ -1,5 +1,4 @@
 from    copy                    import  deepcopy
-from    json                    import  loads
 from    numpy                   import  corrcoef
 import  plotly.graph_objects    as      go
 from    plotly.subplots         import  make_subplots
@@ -8,11 +7,13 @@ from    time                    import  time
 from    util                    import  get_groups, r
 
 
+
+# usage (no spread):    python term_chg_2d.py HO 90 0 12
+# usage (spreads):      python term_chg_2d.py HO 90 [ 1234 ... ] 12
+
+
 # colors: https://www.schemecolor.com/pastel-blue-and-red.php
 
-config      = loads(open("./config.json").read())
-START       = config["start"]
-END         = config["end"]
 
 def report(
     symbol:     str,
@@ -21,7 +22,7 @@ def report(
     max_terms:  int
 ):
 
-    groups          = get_groups(symbol, START, END, False)[-days:]
+    groups          = get_groups(symbol)[-days:]
     spreads         = {}
     outrights       = {}
     outrights_prev  = {}
@@ -251,7 +252,6 @@ def report(
     )
 
     fig.show()
-
 
 
 if __name__ == "__main__":

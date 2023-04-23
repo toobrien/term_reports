@@ -1,6 +1,5 @@
-from    util                    import  clean, get_groups, r
-from    json                    import  loads
-from    math                    import  e, log
+from    util                    import  get_groups, r
+from    math                    import  e
 import  plotly.graph_objects    as      go
 from    plotly.subplots         import  make_subplots
 from    statistics              import  median
@@ -10,10 +9,7 @@ from    typing                  import  List
 from    util                    import  add_trace
 
 
-config  = loads(open("./config.json").read())
-
-START       = config["start"]
-END         = config["end"]
+# usage: python discounts.py CL 90 2018-01-01 2024-01-01
 
 
 def theo_fut_curve(groups: List):
@@ -146,14 +142,14 @@ if __name__ == "__main__":
 
     symbol  = argv[1]
     days    = int(argv[2])
-    start   = START if len(argv) < 4 else argv[3]
-    end     = END   if len(argv) < 5 else argv[4]
+    start   = None if len(argv) < 4 else argv[3]
+    end     = None if len(argv) < 5 else argv[4]
 
     # get, sort, and and clean data
 
     groups = [
         group for group in
-        reversed(get_groups(symbol, start, end, True))
+        reversed(get_groups(symbol, start, end))
     ]
 
     # create figure
@@ -245,6 +241,4 @@ if __name__ == "__main__":
 
     fig.show()
 
-    print(f"start date:\t{start}")
-    print(f"end date:\t{end}")
     print(f"finished:\t{time() - start_ts: 0.1f}")

@@ -1,16 +1,12 @@
-from    json                    import  loads
 from    plotly.subplots         import  make_subplots
 from    sys                     import  argv
-from    util                    import  add_trace, by_season, by_year,  \
-                                        clean, get_groups, rs, spreads
+from    util                    import  add_trace, by_season, by_year, get_groups, rs, spreads
 from    typing                  import  List
 
 
-config      = loads(open("./config.json").read())
-DB_PATH     = config["db_path"]
-START       = config["start"]
-END         = config["end"]
-USE_SPOT    = False
+# usage: python vol_scatter.py CLKM [ HOKM RBKM ... ]
+
+
 WIDTH       = 1     # width of calendars
 N_COLS      = 2     # columns in output figure
 
@@ -41,7 +37,7 @@ def report(spread_ids: List):
 
         if base_symbol not in symbol_data:
 
-            groups                      = clean(get_groups(base_symbol, START, END, USE_SPOT))
+            groups                      = get_groups(base_symbol)
             spread_groups               = spreads(groups, WIDTH)
             season_groups               = by_season(spread_groups)
             symbol_data[base_symbol]    = season_groups

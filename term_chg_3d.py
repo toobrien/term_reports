@@ -1,13 +1,11 @@
-from    enum                    import  IntEnum
-from    json                    import  loads
 import  plotly.graph_objects    as      go
 from    sys                     import  argv
 from    util                    import  get_groups, r
 
 
-config      = loads(open("./config.json").read())
-START       = config["start"]
-END         = config["end"]
+# usage (no spread):    python term_chg_3d.py CL 90 0 12
+# usage (spread):       python term_chg_3d.py CL 90 [ 1234 ... ] 12
+
 
 def report(
     symbol:     str,
@@ -16,7 +14,7 @@ def report(
     max_terms:  int
 ):
 
-    groups      = get_groups(symbol, START, END, False)[-days:]
+    groups      = get_groups(symbol)[-days:]
     record_sets = {}
 
     for i in range(1, len(groups)):
@@ -77,6 +75,7 @@ def report(
         )
 
     fig.show()
+
 
 if __name__ == "__main__":
 

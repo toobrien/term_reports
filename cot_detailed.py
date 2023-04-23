@@ -9,6 +9,9 @@ from    v2.cot_v2_api           import  format, get_contract, report
 from    v2.recs                 import  futs_only
 
 
+# usage: python cot_detailed.py 2018-01-1 2024-01-01 NG 12
+
+
 PRICE_COLOR     = "#6495ED"
 COMM_COLOR      = "#0000FF"
 NONCOMM_COLOR   = "#FF0000"
@@ -44,8 +47,6 @@ def get_stats(dates: List, net_pos: List, returns, window):
 
     return ( dates, chgs, corrs )
 
-
-# example usage: python cot_detailed.py 2018-01-1 2024-01-01 NG 12
 
 if __name__ == "__main__":
 

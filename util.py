@@ -46,8 +46,8 @@ class rs(IntEnum):
 
 def get_groups(
     symbol:     str, 
-    start:      str,
-    end:        str
+    start:      str = None,
+    end:        str = None
 ) -> List:
 
     key = (symbol, start, end)
@@ -66,8 +66,8 @@ def get_groups(
 
     filtered = DB.filter(
                                 (pl.col("name") == symbol) &
-                                (pl.col("date") < start)   & 
-                                (pl.col("date") >= end)
+                                (pl.col("date") >= start)   & 
+                                (pl.col("date") < end)
                             ).sort(
                                 [ "date", "year", "month" ]
                             )
@@ -98,7 +98,7 @@ def get_groups(
             
             for rec in cur_group:
 
-                rec[r.discount_rate] =  log(row[r.settle] / spot) / (rec[r.dte] / 365) \
+                rec[r.discount_rate] =  log(rec[r.settle] / spot) / (rec[r.dte] / 365) \
                                         if rec[r.settle] > 0 and spot > 0 and rec[r.dte] > 0 else 0
 
             # add group to output and set next group's date, spot
@@ -123,6 +123,13 @@ def get_groups(
 
         cur_group.append(rec)
     
+    # compute discount for final group; append final group
+
+    for rec in cur_group:
+
+                rec[r.discount_rate] =  log(rec[r.settle] / spot) / (rec[r.dte] / 365) \
+                                        if rec[r.settle] > 0 and spot > 0 and rec[r.dte] > 0 else 0
+
     groups.append(cur_group)
 
     GROUP_CACHE[key] = groups
@@ -187,32 +194,6 @@ def get_continuous(
     return series
 
 
-# strip negatives and 0 dte for log
-# only for use with spot = True
-
-def clean(groups: List):
-
-    groups = [ 
-        [ 
-            row 
-            for row in group
-            if  row[r.dte]              > 0 and
-                row[r.settle]           > 0 and
-                row[r.spot]             > 0 and
-                row[r.discount_rate]    > 0
-        ]
-        for group in groups
-    ]
-
-    groups = [
-        group 
-        for group in groups
-        if group
-    ]
-
-    return groups
-
-
 def spreads(groups: List, width: int):
 
     spread_groups = [ [] for _ in groups ]
@@ -230,16 +211,18 @@ def spreads(groups: List, width: int):
                 f"{group[j][rs.month]}{group[j][rs.id][-2:]}",
                 f"{group[j + width][rs.month]}{group[j + width][rs.id][-2:]}",
             )
-            spread_record[rs.date]          = group[j][r.date]
-            spread_record[rs.dte]           = group[j][r.dte]
-            spread_record[rs.dte_back]      = group[j + width][r.dte]
-            spread_record[rs.name]          = group[j][r.name]
-            spread_record[rs.month]         = (group[j][r.month], group[j + width][r.month])
-            spread_record[rs.year]          = (group[j][r.year], group[j + 1][r.year])
-            spread_record[rs.settle]        = group[j + width][r.settle] - group[j][r.settle]
-            spread_record[rs.spot]          = group[j][r.spot]
-            spread_record[rs.settle_pct]    = spread_record[rs.settle] / spread_record[rs.spot]
-            spread_record[rs.seq]           = j
+            
+            spread_record[rs.date]          =   group[j][r.date]
+            spread_record[rs.dte]           =   group[j][r.dte]
+            spread_record[rs.dte_back]      =   group[j + width][r.dte]
+            spread_record[rs.name]          =   group[j][r.name]
+            spread_record[rs.month]         =   (group[j][r.month], group[j + width][r.month])
+            spread_record[rs.year]          =   (group[j][r.year], group[j + 1][r.year])
+            spread_record[rs.settle]        =   group[j + width][r.settle] - group[j][r.settle]
+            spread_record[rs.spot]          =   group[j][r.spot]
+            spread_record[rs.settle_pct]    =   spread_record[rs.settle] / spread_record[rs.spot] \
+                                                if spread_record[rs.spot] != 0 else 0
+            spread_record[rs.seq]           =   j
 
             spread_group.append(spread_record)
 

@@ -1,14 +1,11 @@
-from    json                    import  loads
 import  plotly.graph_objects    as      go
 from    plotly.subplots         import  make_subplots
 from    sys                     import  argv
 from    util                    import  get_groups, r
 
-config      = loads(open("./config.json").read())
-START       = config["start"]
-END         = config["end"]
 
-# symbol like "HO" or "CL"
+# usage: python season_single.py CL
+
 
 def report(symbol: str):
 
@@ -48,7 +45,7 @@ def report(symbol: str):
     YEAR_IDX    = 0
     SETTLE_IDX  = 1
 
-    groups = get_groups(symbol, START, END, False)
+    groups = get_groups(symbol)
 
     for group in groups:
 
@@ -112,8 +109,6 @@ def report(symbol: str):
             changes.append(settlements[0][SETTLE_IDX] / settlements[-1][SETTLE_IDX] - 1)
 
         month_changes[month] = changes
-
-    pass
 
     # plot results
 

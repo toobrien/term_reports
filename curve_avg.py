@@ -1,22 +1,18 @@
-from    json                    import  loads
-from    plotly.subplots         import  make_subplots
-from    sys                     import  argv
-from    util                    import  add_trace, avg_r, clean,    \
-                                        get_groups, spreads, term_avg_by_year
+from    plotly.subplots import  make_subplots
+from    sys             import  argv
+from    util            import  add_trace, avg_r, get_groups, spreads, term_avg_by_year
 
 
-config      = loads(open("./config.json").read())
-DB_PATH     = config["db_path"]
-START       = config["start"]
-END         = config["end"]
-USE_SPOT    = False
+# usage: python curve_avg.py CL [ abs | pct ] 
+
+
 START_MONTH = 0
 END_MONTH   = 12
 
 
 def report(symbol: str, mode: str):
 
-    groups              = clean(get_groups(symbol, START, END, USE_SPOT))
+    groups              = get_groups(symbol)
     spread_groups       = spreads(groups, 1)
     avgs_abs            = term_avg_by_year(spread_groups, 0, 12, mode = "abs")
     avgs_pct            = term_avg_by_year(spread_groups, 0, 12, mode = "pct")

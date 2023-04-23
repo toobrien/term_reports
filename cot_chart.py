@@ -4,7 +4,9 @@ from sys                    import argv
 from v2.cot_v2_api          import format, get_contract, report
 from v2.recs                import futs_only
 
-# sample usage: python cot_chart.py 2018-01-01 2024-01-01 CL [ ... ] RB
+
+# usage: python cot_chart.py 2018-01-01 2024-01-01 CL [ ... ] RB
+
 
 if __name__ == "__main__":
 

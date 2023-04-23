@@ -1,13 +1,10 @@
 from    enum                    import  IntEnum
-from    json                    import  loads
 import  plotly.graph_objects    as      go
 from    sys                     import  argv
 from    util                    import  get_groups, r
 
 
-config      = loads(open("./config.json").read())
-START       = config["start"]
-END         = config["end"]
+# usage: python basis.py CL 12 180 [ "date", "dte" ]
 
 
 class ts_rec(IntEnum):
@@ -30,7 +27,7 @@ def report(
 
     series = {}
 
-    groups = get_groups(symbol, START, END, use_spot = True)
+    groups = get_groups(symbol)
 
     for group in groups:
 

@@ -1,20 +1,16 @@
-from    json                    import  loads
 from    plotly.subplots         import  make_subplots
-from    util                    import  add_trace, avg_r, by_season, by_year, clean,        \
-                                        cor_r, get_groups, rs, spot_correlation, spreads
-from    sys                     import argv
+from    util                    import  add_trace, avg_r, by_season, by_year,       \
+                                        cor_r, get_groups, rs, spot_correlation,    \
+                                        spreads
+from    sys                     import  argv
 
-config      = loads(open("./config.json").read())
-DB_PATH     = config["db_path"]
-START       = config["start"]
-END         = config["end"]
-USE_SPOT    = False
-MA_LEN      = 20
 
+# usage: python season_spread.py HONQ [ abs | pct ]
 
 # argv[1] like "HONQ" or "CLMN"
 # argv[2] == "abs" or "pct"
 
+MA_LEN = 20
 SYMBOL = argv[1][:-2]
 MODE   = argv[2]
 MONTHS = (argv[1][-2:-1], argv[1][-1:])
@@ -23,7 +19,7 @@ WIDTH  = 1
 def report():
 
     settle_ax           = rs.settle if MODE == "abs" else rs.settle_pct
-    groups              = clean(get_groups(SYMBOL, START, END, USE_SPOT))
+    groups              = get_groups(SYMBOL)
     spread_groups       = spreads(groups, WIDTH)
     season_groups       = by_season(spread_groups)
 
