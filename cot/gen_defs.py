@@ -1,4 +1,4 @@
-from v2.cot_v2_api  import API_ROOT, REPORT_STR
+from cot.cot_v2_api import API_ROOT, REPORT_STR
 from requests       import get
 
 

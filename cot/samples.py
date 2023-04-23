@@ -1,9 +1,9 @@
-from    v2.cot_v2_api           import API_ROOT, get_contract, get_index, format, report
+from    cot.cot_v2_api          import API_ROOT, get_contract, get_index, format, report
 from    json                    import dumps
 import  plotly.graph_objects    as go
 from    polars                  import from_dict
-from    v2.raw_recs             import futs_only_raw
-from    v2.recs                 import disagg_futs_only, futs_only
+from    cot.raw_recs            import futs_only_raw
+from    cot.recs                import disagg_futs_only, futs_only
 from    requests                import get
 from    sys                     import argv
 from    time                    import time

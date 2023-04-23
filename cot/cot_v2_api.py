@@ -1,9 +1,9 @@
 from bisect             import bisect_left
-from v2.common_symbols  import COMMON_SYMBOLS
+from cot.common_symbols import COMMON_SYMBOLS
 from enum               import IntEnum
-from v2.raw_recs        import *
+from cot.raw_recs       import *
 from requests           import get
-from v2.recs            import *
+from cot.recs           import *
 
 
 class report(IntEnum):
