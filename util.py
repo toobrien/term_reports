@@ -147,7 +147,7 @@ def get_continuous(
     mode:   str
 ):
 
-    groups  = get_groups(symbol, start, end, False)
+    groups  = get_groups(symbol, start, end)
     series  = []
 
     if mode == "nearest":
