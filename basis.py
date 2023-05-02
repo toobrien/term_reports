@@ -4,7 +4,9 @@ from    sys                     import  argv
 from    util                    import  get_groups, r
 
 
-# usage: python basis.py CL 12 180 [ "date", "dte" ]
+# usage:    
+#           python basis.py CL 12 180 dte abs
+#           python basis.py HO 12 252 date pct
 
 
 class ts_rec(IntEnum):
@@ -22,7 +24,8 @@ def report(
     symbol:         str,
     num_contracts:  int,
     max_dte:        int,
-    mode:           str
+    x_mode:         str,
+    y_mode:         str,
 ):
 
     series = {}
@@ -51,7 +54,12 @@ def report(
                 series[id] = []
 
             basis       = spot - settle
-            basis_norm  = basis / spot
+            basis_norm  = basis / spot * 100
+            text        = f"date: {date}<br>dte: {dte}<br>spot: {spot}<br>basis: {basis: 0.4f}"
+
+            if y_mode == "abs":
+
+                text = f"date: {date}<br>dte: {dte}<br>{spot}<br>basis (%): {basis_norm: 0.1f}%"
 
             rec = ( 
                     date,
@@ -60,7 +68,7 @@ def report(
                     spot,
                     basis,
                     basis_norm,
-                    f"{date}<br>{dte}<br>{spot}<br>{basis_norm * 100: 0.1f}%"
+                    text
                 )
             
             series[id].append(rec)
@@ -71,38 +79,32 @@ def report(
 
     selected = list(series.items())[-num_contracts:]
 
-    cur_opacity = 0.2
-    step        = 0.8 / len(selected)
-
     for id, ts in selected:
 
         x = [ rec[ts_rec.dte] for rec in ts]
+        y = [ rec[ts_rec.basis] for rec in ts ]
 
-        if mode == "date":
+        if x_mode == "date":
 
             x = [ rec[ts_rec.date] for rec in ts]
 
+        if y_mode == "pct":
+
+            y = [ rec[ts_rec.basis_norm] for rec in ts ]
 
         fig.add_trace(
             go.Scatter(
                 {
                     "x": x,
-                    "y": [ rec[ts_rec.basis] for rec in ts],
+                    "y": y,
                     "text": [ rec[ts_rec.text] for rec in ts ],
                     "name": f"{id[0]} {id[1]} {id[2]}",
-                    "mode": "markers",
-                    "marker": {
-                        "opacity": cur_opacity
-                    }
+                    "mode": "markers"
                 }
             )
         )
 
-        cur_opacity += step
-
     fig.show()
-
-    pass
 
 
 if __name__ == "__main__":
@@ -110,6 +112,7 @@ if __name__ == "__main__":
     symbol          = argv[1]
     num_contracts   = int(argv[2])
     max_dte         = int(argv[3])
-    mode            = argv[4]       # "date" for x axis == date, any other value for x axis == dte
+    x_mode          = argv[4]       # "date" for x axis == date, any other value for x axis == dte
+    y_mode          = argv[5]       # "abs" for points, or "pct" for %
 
-    report(symbol, num_contracts, max_dte, mode)
+    report(symbol, num_contracts, max_dte, x_mode, y_mode)
