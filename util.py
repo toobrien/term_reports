@@ -137,6 +137,29 @@ def get_groups(
     return groups
 
 
+def get_contracts_by_month(symbol: str, month: str):
+
+    groups = get_groups(symbol)
+
+    years = {}
+
+    for group in groups:
+
+        for rec in group:
+
+            if rec[r.month] == month:
+
+                year = rec[r.year]
+
+                if year not in years:
+
+                    years[year] = []
+
+                years[year].append(rec)
+    
+    return years
+
+
 # returns a continuous contract of ohlcv for each of "term"
 
 def get_continuous(
