@@ -57,9 +57,9 @@ def report(
             basis_norm  = basis / spot * 100
             text        = f"date: {date}<br>dte: {dte}<br>spot: {spot}<br>basis: {basis: 0.4f}"
 
-            if y_mode == "abs":
+            if y_mode == "pct":
 
-                text = f"date: {date}<br>dte: {dte}<br>{spot}<br>basis (%): {basis_norm: 0.1f}%"
+                text = f"date: {date}<br>dte: {dte}<br>{spot}<br>basis: {basis_norm: 0.1f}%"
 
             rec = ( 
                     date,
@@ -81,7 +81,7 @@ def report(
 
     for id, ts in selected:
 
-        x = [ rec[ts_rec.dte] for rec in ts]
+        x = [ rec[ts_rec.dte]   for rec in ts ]
         y = [ rec[ts_rec.basis] for rec in ts ]
 
         if x_mode == "date":
@@ -98,8 +98,7 @@ def report(
                     "x": x,
                     "y": y,
                     "text": [ rec[ts_rec.text] for rec in ts ],
-                    "name": f"{id[0]} {id[1]} {id[2]}",
-                    "mode": "markers"
+                    "name": f"{id[0]} {id[1]} {id[2]}"
                 }
             )
         )

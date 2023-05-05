@@ -1,5 +1,5 @@
 from            bisect                  import  bisect_left
-from            datetime                import  datetime
+from            datetime                import  datetime, timedelta
 from            enum                    import  IntEnum
 from            json                    import  loads
 from            math                    import  log
@@ -9,10 +9,11 @@ from            requests                import  get
 from            statistics              import  correlation, StatisticsError
 from            typing                  import  List
 
+
 BEGIN       = "1900-01-01"
 END         = "2100-01-01"
-DB_PATH     = loads(open("./config.json").read())["db_path"]
-DB          = pl.read_parquet(DB_PATH)
+CONFIG      = loads(open("./config.json").read())
+DB          = pl.read_parquet(CONFIG["db_path"])
 GROUP_CACHE = {}
 
 
@@ -27,6 +28,8 @@ class r(IntEnum):
     spot            = 6
     dte             = 7
     discount_rate   = 8
+    volume          = 9
+    oi              = 10
 
 
 class rs(IntEnum):
@@ -42,6 +45,11 @@ class rs(IntEnum):
     dte         = 8
     dte_back    = 9
     seq         = 10
+
+
+def get_days_ago(days_back: int):
+
+    return (datetime.now() - timedelta(days = days_back)).strftime("%Y-%m-%d")
 
 
 def get_groups(
@@ -80,7 +88,9 @@ def get_groups(
                                 "month",
                                 "year",
                                 "settle",
-                                "dte"
+                                "dte",
+                                "volume",
+                                "oi"
                             ]
                         ).rows()
     groups      = []
@@ -118,7 +128,9 @@ def get_groups(
             row[5],         # settle
             spot,           # "spot" (M1 price)
             row[6],         # dte
-            None            # discount rate
+            None,           # discount rate
+            row[7],         # volume
+            row[8]          # open interest
         ]
 
         cur_group.append(rec)
@@ -135,6 +147,15 @@ def get_groups(
     GROUP_CACHE[key] = groups
 
     return groups
+
+
+def get_spot(symbol: str):
+
+    path = CONFIG['spot_path'] + f"{symbol}.parquet"
+
+    rows = pl.read_parquet(path).rows()
+
+    return rows
 
 
 def get_contracts_by_month(symbol: str, month: str):
