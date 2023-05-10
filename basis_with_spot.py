@@ -39,7 +39,7 @@ def report(
         dte         = fut_row[r.dte]
         spot        = spot_row[1]
         basis       = spot - settle
-        basis_pct   = (basis / spot) * 100
+        basis_pct   = (spot / settle - 1) * 100
         id          = ( symbol, month, year )
 
         if id not in series:
