@@ -7,6 +7,7 @@ from    util                    import  get_continuous, r
 
 # usage: python move.py ZR 1 3.0
 
+
 def report(
     symbol: str,
     term:   int, 
