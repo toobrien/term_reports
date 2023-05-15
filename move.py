@@ -60,13 +60,13 @@ def report(
     p_up_cont = up_cont / up
     p_dn_cont = dn_cont / dn
 
-    print(f"beta:       {beta:0.2f}")
-    print(f"alpha:      {alpha:0.2f}")
-    print(f"samples:    {n_samples}")
-    print(f"days:       {n_days}")
-    print(f"p(move):    {p_move:0.2f}")
-    print(f"p(up_cont): {p_up_cont:0.2f}")
-    print(f"p(dn_cont): {p_dn_cont:0.2f}")
+    print(f"beta:       \t{beta:0.2f}")
+    print(f"alpha:      \t{alpha:0.2f}")
+    print(f"samples:    \t{n_samples}")
+    print(f"days:       \t{n_days}")
+    print(f"p(move):    \t{p_move:0.2f}")
+    print(f"p(up_cont): \t{p_up_cont:0.2f}\t{up_cont}/{up}")
+    print(f"p(dn_cont): \t{p_dn_cont:0.2f}\t{dn_cont}/{dn}")
 
     fig = go.Figure()
 
