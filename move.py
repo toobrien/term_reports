@@ -30,16 +30,43 @@ def report(
     n_samples   = len(pairs)
     n_days      = len(con)
     p_move      = n_samples / (n_days - 2)
-    x = [ pair[0] for pair in pairs ]
-    y = [ pair[1] for pair in pairs ]
-
+    x           = [ pair[0] for pair in pairs ]
+    y           = [ pair[1] for pair in pairs ]
     beta, alpha = linear_regression(x, y)
+
+    up      = 0
+    up_cont = 0
+    dn      = 0
+    dn_cont = 0
+
+    for pair in pairs:
+
+        if pair[0] > 0:
+            
+            up += 1
+            
+            if pair[1] > 0:
+
+                up_cont += 1
+        
+        elif pair[0] < 0:
+
+            dn += 1
+
+            if pair[1] < 0:
+
+                dn_cont += 1
+
+    p_up_cont = up_cont / up
+    p_dn_cont = dn_cont / dn
 
     print(f"beta:       {beta:0.2f}")
     print(f"alpha:      {alpha:0.2f}")
     print(f"samples:    {n_samples}")
     print(f"days:       {n_days}")
     print(f"p(move):    {p_move:0.2f}")
+    print(f"p(up_cont): {p_up_cont:0.2f}")
+    print(f"p(dn_cont): {p_dn_cont:0.2f}")
 
     fig = go.Figure()
 
