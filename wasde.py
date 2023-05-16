@@ -1,44 +1,39 @@
+from    json            import  loads
 import  polars          as      pl
 from    sys             import  argv
-from    usda_api.fas    import  fas_client
 
 
-FIELDS = {
-    "Output":           "",
-    "Total Supply":     "Total Distribution",
-    "Trade":            "MY Exports",
-    "Total Use":        "Consumption and Residual",
-    "Ending Stocks":    "Ending Stocks"
-}
+WASDE_PATH = loads(open("./config.json", "r").read())["wasde_path"]
 
 
 def report(
     symbol: str,
-    start:  int,
-    end:    int
+    start:  str,
+    end:    str
 ):
 
-    res = fas_client.get_commodity_data(symbol, start, end)
-    df  = pl.from_dict(res)
-
+    df = pl.read_parquet(WASDE_PATH)
     df = df.filter(
-        (pl.col("CountryName") == "United States")
+        (pl.col("Region") == "United States")   &
+        (pl.col("ReleaseDate") >=   start)      &
+        (pl.col("ReleaseDate") <    end)
     ).select(
         [
+            "WasdeNumber",
+            "ReportDate",
+            "ReportTitle",
+            "ReleaseDate",
+            "Commodity",
             "MarketYear",
-            "CalendarYear",
-            "Month",
-            "AttributeDescription",
-            "UnitDescription",
+            "ForecastYear",
+            "ForecastMonth",
+            "Attribute",
+            "Unit",
             "Value"
         ]
     )
 
     rows = df.rows()
-    
-    for row in rows:
-
-        print(f"{row[0]:6}{row[1]:6}{row[2]:3}{row[3]:30}{row[4]:10}{row[5]:10}")
 
     pass
 
@@ -46,7 +41,7 @@ def report(
 if __name__ == "__main__":
 
     symbol  = argv[1]
-    start   = int(argv[2])
-    end     = int(argv[3])
+    start   = argv[2]
+    end     = argv[3]
 
     report(symbol, start, end)

@@ -1,6 +1,7 @@
 {
     "db_path":      "../data/futs.parquet",
     "spot_path":    "../data/",
+    "wasde_path":   "../data/wasde.parquet",
     "start":    "1900-01-01",
     "end":      "2050-01-01",
     "enabled": [
