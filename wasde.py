@@ -8,8 +8,9 @@ from    sys                     import  argv
 # usage: python wasde.py ZR 2018-01-1 2024-01-01
 
 
-WASDE_PATH  = loads(open("./config.json", "r").read())["wasde_path"]
-SYM_MAP     = {
+WASDE_PATH      = loads(open("./config.json", "r").read())["wasde_path"]
+SUBPLOT_HEIGHT  = 300
+SYM_MAP         = {
     #"HE":   "Pork",
     #"GF":   "Beef",
     #"LE":   "Beef",
@@ -65,7 +66,18 @@ def report(
         ( "Ending Stocks",      6 )
     ]
 
-    fig = make_subplots(rows = 6, cols = 1)
+    fig = make_subplots(
+        rows                = 6, 
+        cols                = 1,
+        shared_xaxes        = True,
+        subplot_titles      = tuple( attribute[0] for attribute in attributes ),
+        vertical_spacing    = 0.03
+    )
+    
+    fig.update_layout(
+        height      = 6 * SUBPLOT_HEIGHT,
+        title_text  = symbol
+    )
 
     for market_year in market_years:
 
