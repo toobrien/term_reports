@@ -1,4 +1,3 @@
-from    enum                    import  IntEnum
 from    json                    import  loads
 from    plotly.subplots         import  make_subplots
 import  plotly.graph_objects    as      go
@@ -6,7 +5,7 @@ import  polars                  as      pl
 from    sys                     import  argv
 
 
-# usage: python wasde.py ZR 2022/23 2018-01-1 2024-01-01
+# usage: python wasde.py ZR 2018-01-1 2024-01-01
 
 
 WASDE_PATH  = loads(open("./config.json", "r").read())["wasde_path"]
@@ -30,37 +29,10 @@ SYM_MAP     = {
     "KE":   "Hard Red Winter",
     "ZC":   "Corn"
 }
-CALENDAR    = {
-    0:  "F",
-    1:  "G",
-    2:  "H",
-    3:  "J",
-    4:  "K",
-    5:  "M",
-    6:  "N",
-    7:  "Q",
-    8:  "U",
-    9:  "V",
-    10: "X",
-    11: "Z"
-}
-
-
-class w_rec(IntEnum):
-
-    release_date    = 0
-    market_year     = 1
-    forecast_year   = 2
-    forecast_month  = 3
-    attribute       = 4
-    unit            = 5
-    value           = 6
-
 
 
 def report(
     symbol:     str,
-    crop_year:  str,
     start:      str,
     end:        str
 ):
@@ -83,64 +55,40 @@ def report(
         ]
     )
 
-    rows = df.rows()
-
-    series = {
-        "Avg. Farm Price":  [ { "max": float("-inf"), "min": float("inf"), crop_year: None } ] * 12,
-        "Area Harvested":   [ { "max": float("-inf"), "min": float("inf"), crop_year: None } ] * 12,
-        "Area Planted":     [ { "max": float("-inf"), "min": float("inf"), crop_year: None } ] * 12,
-        "Supply, Total":    [ { "max": float("-inf"), "min": float("inf"), crop_year: None } ] * 12,
-        "Use, Total":       [ { "max": float("-inf"), "min": float("inf"), crop_year: None } ] * 12,
-        "Ending Stocks":    [ { "max": float("-inf"), "min": float("inf"), crop_year: None } ] * 12
-    }
-
-    valid_attributes = list(series.keys())
-
-    for row in rows:
-
-        idx     = row[w_rec.forecast_month] - 1
-        attrib  = row[w_rec.attribute]
-        val     = row[w_rec.value]
-        m_year  = row[w_rec.market_year]
-        
-        if attrib in valid_attributes:
-
-            series_ = series[attrib]
-
-            series_[idx]["max"]     = max(val, series_[idx]["max"])
-            series_[idx]["min"]     = min(val, series_[idx]["min"])
-            series_[idx][crop_year] = val if m_year == crop_year else series_[idx][crop_year]
+    market_years    = df.unique("MarketYear").select("MarketYear").rows()
+    attributes      = [ 
+        ( "Avg. Farm Price",    1 ),
+        ( "Area Harvested",     2 ),
+        ( "Area Planted",       3 ),
+        ( "Supply, Total",      4 ),
+        ( "Use, Total",         5 ),
+        ( "Ending Stocks",      6 )
+    ]
 
     fig = make_subplots(rows = 6, cols = 1)
 
-    i = 1
-    x = list(CALENDAR.values())
+    for market_year in market_years:
 
-    for attrib, months in series.items():
+        my_series = df.filter(pl.col("MarketYear") == market_year)
+        
+        for attribute, row in attributes:
 
-        for trace_def in [ 
-            ( "max",        "#FF0000" ),
-            ( "min",        "#0000FF" ),
-            ( crop_year,    "#ca2c92" ) 
-        ]:
-
-            measure = trace_def[0]
-            color   = trace_def[1]
+            attrib_series = my_series.filter(pl.col("Attribute") == attribute)
 
             fig.add_trace(
                 go.Scatter(
                     {
-                        "x":        x,
-                        "y":        [ month[measure] for month in months ],
-                        "marker":   { "color": color },
-                        "name":     f"{attrib} {measure}"
+                        "x":    attrib_series["ReleaseDate"],
+                        "y":    attrib_series["Value"],
+                        "name": f"{attribute} {market_year[0]}",
+                        "text": [ market_year[0] for i in range(len(attrib_series)) ]
                     }
                 ),
-                row = i,
+                row = row,
                 col = 1
             )
-        
-        i += 1
+
+            pass
 
     fig.show()
 
@@ -148,8 +96,7 @@ def report(
 if __name__ == "__main__":
 
     symbol      = argv[1]
-    crop_year   = argv[2]
-    start       = argv[3]
-    end         = argv[4]
+    start       = argv[2]
+    end         = argv[3]
 
-    report(symbol, crop_year, start, end)
+    report(symbol, start, end)
