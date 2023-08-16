@@ -1,19 +1,23 @@
-from            bisect                  import  bisect_left
-from            datetime                import  datetime, timedelta
-from            enum                    import  IntEnum
-from            json                    import  loads
-from            math                    import  log
-import          plotly.graph_objects    as      go
-import          polars                  as      pl
-from            requests                import  get
-from            statistics              import  correlation, StatisticsError
-from            typing                  import  List
+from    bisect                  import  bisect_left
+from    datetime                import  datetime, timedelta
+from    enum                    import  IntEnum
+from    json                    import  loads
+from    math                    import  log
+import  plotly.graph_objects    as      go
+import  polars                  as      pl
+from    requests                import  get
+from    sys                     import  path
+from    statistics              import  correlation, StatisticsError
+from    typing                  import  List
+
+path.append("..")
+
+from    data.cat_df            import  cat_df
 
 
 BEGIN       = "1900-01-01"
 END         = "2100-01-01"
 CONFIG      = loads(open("./config.json").read())
-DB          = pl.read_parquet(CONFIG["db_path"])
 GROUP_CACHE = {}
 
 
@@ -72,27 +76,26 @@ def get_groups(
 
         end = END
 
-    filtered = DB.filter(
-                                (pl.col("name") == symbol) &
-                                (pl.col("date") >= start)   & 
-                                (pl.col("date") < end)
-                            ).sort(
-                                [ "date", "year", "month" ]
-                            )
-    
-    rows = filtered.select(
-                            [
-                                "contract_id",
-                                "date",
-                                "name",
-                                "month",
-                                "year",
-                                "settle",
-                                "dte",
-                                "volume",
-                                "oi"
-                            ]
-                        ).rows()
+    rows        =  cat_df(
+                    "futs", 
+                    symbol, 
+                    start, 
+                    end
+                ).sort(
+                    [ "date", "year", "month" ]
+                ).select(
+                    [
+                        "contract_id",
+                        "date",
+                        "name",
+                        "month",
+                        "year",
+                        "settle",
+                        "dte",
+                        "volume",
+                        "oi"
+                    ]
+                ).rows()
     groups      = []
     cur_date    = rows[0][1]
     spot        = rows[0][5] # use front month price as "spot"... hack
