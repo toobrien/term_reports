@@ -1,3 +1,5 @@
+import  numpy       as      np
+import  pandas      as      pd
 import  polars      as      pl
 from    sys         import  argv, path
 from    time        import  time
@@ -38,13 +40,22 @@ if __name__ == "__main__":
         ]
     )
 
-    contracts = df.filter(df["date"] == df["date"][-1])["contract_id"][0:months]
+    contracts   = df.filter(df["date"] == df["date"][-1])["contract_id"]
+    contracts   = list(contracts[0:months])
+    df          = df.filter(df["contract_id"].is_in(contracts))
+    df          = df.to_pandas()
 
-    df = df.filter(df["contract_id"].is_in(contracts))
-    df = df.pivot(index = "date", columns = "contract_id", values = "settle")
+    df_price    = df.pivot_table(index = "date", columns = "contract_id", values = "settle")[contracts]
+    df_dte      = df.pivot_table(index = "date", columns = "contract_id", values = "dte")[contracts]
+    
+    m1_price    = pd.concat([ df_price.iloc[:, 0] ] * (len(contracts) - 1), axis = 1, ignore_index = True)
+    dur         = (df_dte.subtract(df_dte.iloc[:, 0], axis = 0).iloc[0].T)[1:] / 365
+    df_price    = df_price.iloc[:, 1:]
 
-    print(df)
+    x           = df_price.values
+    y           = m1_price.values
+    t           = dur.values
 
-    print(f"elapsed: {time() - t0:0.2f}")
-
+    df_rate     = np.log(x / y) / t
+   
     pass
