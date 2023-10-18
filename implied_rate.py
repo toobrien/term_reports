@@ -60,20 +60,18 @@ if __name__ == "__main__":
     settles     = settles.to_numpy()
     dtes        = dtes.to_numpy()
 
+    logs        = np.log(settles / m1_settles)
+    dtes        = dtes - m1_dtes
+    rates       = logs / (dtes / 365)
+
     #print(dates)
     #print(m1_settles)
     #print(m1_dtes)
     #print(settles)
     #print(dtes)
-
-    logs    = np.log(settles / m1_settles)
-    dtes    = dtes - m1_dtes
-
-    rates   = logs / (dtes / 365)
-
-    print(logs)
-    print(dtes)
-    print(rates)
+    #print(logs)
+    #print(dtes)
+    #print(rates)
 
     fig = go.Figure(data = go.Surface(z = rates))
 
