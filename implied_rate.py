@@ -45,6 +45,9 @@ if __name__ == "__main__":
     df          = df.filter(df["contract_id"].is_in(contracts))
     
     settles     = df.pivot(index = "date", columns = "contract_id", values = "settle", aggregate_function = "first")
+
+    #print(settles)
+
     dtes        = df.pivot(index = "date", columns = "contract_id", values = "dte", aggregate_function = "first")
     
     dates       = settles.select("date")
