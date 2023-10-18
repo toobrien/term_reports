@@ -9,7 +9,7 @@ path.append("..")
 from    data.cat_df             import  cat_df
 
 
-# python CME_HOX2023 12 2023-08-01 2024-01-01
+# python implied_rate.py HO 12 2023-08-01 2024-01-01
 
 
 pl.Config.set_tbl_rows(50)
