@@ -2,6 +2,7 @@ import  numpy                   as      np
 import  plotly.graph_objects    as      go
 from    plotly.subplots         import  make_subplots
 import  polars                  as      pl
+from    scipy.optimize          import  curve_fit
 from    sys                     import  argv, path
 from    time                    import  time
 
