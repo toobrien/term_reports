@@ -1,5 +1,6 @@
 import  numpy                   as      np
-import  plotly.graph_objects    as  go
+import  plotly.graph_objects    as      go
+from    plotly.subplots         import  make_subplots
 import  polars                  as      pl
 from    sys                     import  argv, path
 from    time                    import  time
@@ -76,7 +77,10 @@ if __name__ == "__main__":
     #print(dtes)
     #print(rates)
 
-    fig = go.Figure(data = go.Surface(z = rates))
+    fig = make_subplots(rows = 1, cols = 2, specs = [ [ { "is_3d": True }, { "is_3d": True } ] ])
+
+    fig.add_trace(go.Surface(z = logs), 1, 1)
+    fig.add_trace(go.Surface(z = rates), 1, 2)
 
     fig.show()
 
