@@ -68,6 +68,7 @@ if __name__ == "__main__":
     logs        = np.log(settles / m1_settles)
     dtes        = dtes - m1_dtes
     rates       = logs / (dtes / 365)
+    cal_logs    = logs[:, :-1] - logs[:, 1:]
 
     #print(dates)
     #print(m1_settles)
@@ -78,10 +79,21 @@ if __name__ == "__main__":
     #print(dtes)
     #print(rates)
 
-    fig = make_subplots(rows = 1, cols = 2, specs = [ [ { "is_3d": True }, { "is_3d": True } ] ])
+    fig = make_subplots(
+            rows = 3,
+            cols = 1, 
+            specs = [ 
+                [ 
+                    { "is_3d": True },
+                    { "is_3d": True },
+                    { "is_3d": True }
+                ] 
+            ]
+        )
 
     fig.add_trace(go.Surface(z = logs), 1, 1)
-    fig.add_trace(go.Surface(z = rates), 1, 2)
+    fig.add_trace(go.Surface(z = rates), 2, 1)
+    fig.add_trace(go.Surface(z = cal_logs), 3, 1)
 
     fig.show()
 
