@@ -4,7 +4,6 @@ from    plotly.subplots         import  make_subplots
 import  polars                  as      pl
 from    scipy.optimize          import  curve_fit
 from    sys                     import  argv, path
-from    time                    import  time
 
 path.append("..")
 
@@ -20,7 +19,6 @@ pl.Config.set_tbl_cols(25)
 
 if __name__ == "__main__":
 
-    t0      = time()
     symbol  = argv[1]
     months  = int(argv[2])
     start   = argv[3]
@@ -67,7 +65,8 @@ if __name__ == "__main__":
 
     logs        = np.log(settles / m1_settles)
     dtes        = dtes - m1_dtes
-    rates       = logs / (dtes / 365)
+    time        = dtes / 365
+    rates       = logs / time
     cal_logs    = logs[:, :-1] - logs[:, 1:]
 
     #print(dates)
@@ -80,22 +79,49 @@ if __name__ == "__main__":
     #print(rates)
 
     fig = make_subplots(
-            rows    = 1,
+            rows    = 2,
             cols    = 3, 
             specs   = [ 
                 [ 
                     { "is_3d": True },
                     { "is_3d": True },
+                    { "is_3d": True },
+                
+                ],
+                [
+                    { "is_3d": True },
+                    { "is_3d": True },
                     { "is_3d": True }
                 ]
             ],
-            subplot_titles      = ( "logs", "rates", "cal_logs" ),
+            subplot_titles      = ( "logs", "logs_model", "errors", "rates", "cal_logs", "settles" ),
             horizontal_spacing  = 0.05,
+            vertical_spacing    = 0.05
         )
 
     fig.add_trace(go.Surface(z = logs), 1, 1)
-    fig.add_trace(go.Surface(z = rates), 1, 2)
-    fig.add_trace(go.Surface(z = cal_logs), 1, 3)
+    fig.add_trace(go.Surface(z = rates), 2, 1)
+    fig.add_trace(go.Surface(z = cal_logs), 2, 2)
+    fig.add_trace(go.Surface(z = settles), 2, 3)
+
+    # curve fit
+
+    def f(x, a, c, d):
+
+        return a * np.exp(-c * x) + d
+    
+    model = np.zeros(shape = logs.shape)
+
+    for i in range(logs.shape[0]):
+
+        popt, pcov = curve_fit(f, time[i], logs[i])
+
+        model[i, :] = f(time[i], popt[0], popt[1], popt[2])
+
+    errors = logs - model
+
+    fig.add_trace(go.Surface(z = model, colorscale = "Viridis"), 1, 2)
+    fig.add_trace(go.Surface(z = errors, colorscale = "viridis"), 1, 3)
 
     fig.show()
 
