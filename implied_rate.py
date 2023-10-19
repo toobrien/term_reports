@@ -80,20 +80,22 @@ if __name__ == "__main__":
     #print(rates)
 
     fig = make_subplots(
-            rows = 3,
-            cols = 1, 
-            specs = [ 
+            rows    = 1,
+            cols    = 3, 
+            specs   = [ 
                 [ 
                     { "is_3d": True },
                     { "is_3d": True },
                     { "is_3d": True }
-                ] 
-            ]
+                ]
+            ],
+            subplot_titles      = ( "logs", "rates", "cal_logs" ),
+            horizontal_spacing  = 0.05,
         )
 
     fig.add_trace(go.Surface(z = logs), 1, 1)
-    fig.add_trace(go.Surface(z = rates), 2, 1)
-    fig.add_trace(go.Surface(z = cal_logs), 3, 1)
+    fig.add_trace(go.Surface(z = rates), 1, 2)
+    fig.add_trace(go.Surface(z = cal_logs), 1, 3)
 
     fig.show()
 
