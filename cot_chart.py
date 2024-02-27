@@ -34,8 +34,8 @@ if __name__ == "__main__":
         con = get_contract(report.futs_only, symbol, format.convenience, start, end)
 
         for trace_data in [
-            ( con[futs_only.comm_net_pct],      "#0000FF", "comm net pct"       ),
-            ( con[futs_only.noncomm_net_pct],   "#FF0000", "noncomm net pct"    ),
+            ( con[futs_only.comm_net_pct],      "#FF0000", "comm net pct"       ),
+            ( con[futs_only.noncomm_net_pct],   "#0000FF", "noncomm net pct"    ),
             ( con[futs_only.nonrep_net_pct],    "#FFFF00", "nonrep net pct"     )
         ]:
 
