@@ -40,7 +40,7 @@ if __name__ == "__main__":
         ]:
 
             fig.add_trace(
-                Bar(
+                Scatter(
                     x       = con[futs_only.date],
                     y       = trace_data[0],
                     marker  = {
