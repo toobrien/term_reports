@@ -1,4 +1,4 @@
-from plotly.graph_objects   import Scatter
+from plotly.graph_objects   import Scatter, Bar
 from plotly.subplots        import make_subplots
 from sys                    import argv
 from cot.cot_v2_api         import format, get_contract, report
@@ -15,12 +15,17 @@ if __name__ == "__main__":
     symbols     = argv[3:]
 
     fig = make_subplots(
-        rows            = len(symbols),
-        cols            = 1,
-        subplot_titles  = tuple(symbols)
+        rows                = len(symbols),
+        cols                = 1,
+        subplot_titles      = tuple(symbols),
+        vertical_spacing    = 0.025
     )
 
-    # fig.update_layout(barmode = "overlay")
+    fig.update_layout(
+        barmode = "overlay",
+        autosize = True,
+        height =   len(symbols) * 600
+    )
 
     i = 1
 
@@ -35,7 +40,7 @@ if __name__ == "__main__":
         ]:
 
             fig.add_trace(
-                Scatter(
+                Bar(
                     x       = con[futs_only.date],
                     y       = trace_data[0],
                     marker  = {
